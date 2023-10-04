@@ -1,14 +1,7 @@
-name: learn-github-actions
+name: Create and publish a Docker image
 run-name: ${{ github.actor }} is learning GitHub Actions
 on:
   - push
-#
-name: Create and publish a Docker image
-
-# Configures this workflow to run every time a change is pushed to the branch called `release`.
-on:
-  push:
-    branches: ['release']
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
@@ -39,4 +32,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.GITHUB_REF_NAME }}
