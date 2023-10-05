@@ -51,12 +51,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::env::var("DATABASE_URL").expect("Missing env variable DATABASE_URL"),
     );
     let pool = r2d2::Pool::builder().build(mgr)?;
-    println!("Will serve on 3000");
-    // run it with hyper on localhost:3000
+    println!("Will serve on 8080");
+    // run it with hyper on localhost:8080
     let app = Router::new()
         .route("/todos", get(list_all_todos))
         .with_state(AppState { conn: pool });
-    let target_port = std::env::var("PORT").map_or(3000, |port_str| {
+    let target_port = std::env::var("PORT").map_or(8080, |port_str| {
         port_str.parse::<u16>().expect("Invalid PORT env")
     });
     let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .serve(app.into_make_service())
         .with_graceful_shutdown(async { tokio::signal::ctrl_c().await.unwrap() })
         .await
-        .expect("Failed to bind on port 3000");
+        .expect("Failed to bind on port 8080");
     println!("end");
     Ok(())
 }
