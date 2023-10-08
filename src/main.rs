@@ -9,6 +9,7 @@ use state::AppState;
 
 use crate::model::{Todo, TodoListingResponse};
 
+mod migrations;
 mod model;
 mod schema;
 mod state;
@@ -51,6 +52,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::env::var("DATABASE_URL").expect("Missing env variable DATABASE_URL"),
     );
     let pool = r2d2::Pool::builder().build(mgr)?;
+    println!("Connected successfully, running migrations");
+    migrations::run_migrations(&mut pool.get()?).unwrap();
     println!("Will serve on 8080");
     // run it with hyper on localhost:8080
     let app = Router::new()
