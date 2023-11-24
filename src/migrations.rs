@@ -5,9 +5,9 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
-pub fn run_migrations(
-    connection: &mut impl MigrationHarness<Pg>,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+type SyncError = dyn Error + Send + Sync;
+
+pub fn run_migrations(connection: &mut impl MigrationHarness<Pg>) -> Result<(), Box<SyncError>> {
     // This will run the necessary migrations.
     //
     // See the documentation for `MigrationHarness` for

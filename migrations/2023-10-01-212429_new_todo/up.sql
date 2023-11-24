@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS todos(
-  todo_id SERIAL PRIMARY KEY,
-  todo_title TEXT NOT NULL,
-  todo_description TEXT NOT NULL,
-  todo_done BOOLEAN NOT NULL DEFAULT FALSE
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  task_description TEXT NOT NULL DEFAULT '',
+  done BOOLEAN NOT NULL DEFAULT FALSE
 );
