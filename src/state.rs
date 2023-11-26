@@ -1,9 +1,7 @@
-use diesel::{
-    r2d2::{ConnectionManager, Pool},
-    PgConnection,
-};
+use sea_orm::DatabaseConnection;
+
 
 #[derive(Clone)]
 pub struct AppState {
-    pub conn: Pool<ConnectionManager<PgConnection>>,
+    pub connection: DatabaseConnection
 }
