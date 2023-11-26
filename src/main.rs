@@ -9,10 +9,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use tower_http::trace::TraceLayer;
 use diesel::prelude::*;
 use diesel::{insert_into, r2d2::ConnectionManager, PgConnection, QueryDsl, SelectableHelper};
 use r2d2::{ManageConnection, Pool, PooledConnection};
 use state::AppState;
+use tracing_subscriber::filter::EnvFilter;
 
 use crate::model::{NewTodo, Todo, TodoListingResponse};
 
@@ -83,19 +85,19 @@ type PgPool = Pool<ConnectionManager<PgConnection>>;
 
 fn build_app(pool: PgPool) -> Router {
     // run it with hyper on localhost:8080
-    Router::new()
+    let trace = TraceLayer::new_for_http();
+    return Router::new()
         .route("/todos", get(list_all_todos))
         .route("/todos", post(create_new_todo))
-        .with_state(AppState { conn: pool })
+        .layer(trace)
+        .with_state(AppState { conn: pool });
     // return app;
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let log_env = env_logger::Env::default().default_filter_or("info");
-    env_logger::Builder::from_env(log_env)
-        .target(env_logger::Target::Stdout)
-        .init();
+    let filter = EnvFilter::from_default_env();
+    tracing_subscriber::fmt().with_env_filter(filter).init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
     let db_url = std::env::var("DATABASE_URL").expect("Missing env variable DATABASE_URL");
@@ -105,11 +107,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     migrations::run_migrations(&mut pool.get()?).unwrap();
     log::info!("Migrations OK, Will serve on 8080");
     let app = build_app(pool);
+    let service = app.into_make_service();
     let target_port: u16 =
         std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
     let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
     axum::Server::bind(&bind_addr)
-        .serve(app.into_make_service())
+        .serve(service)
         .with_graceful_shutdown(async { tokio::signal::ctrl_c().await.unwrap() })
         .await
         .expect("Failed to bind on port 8080");
