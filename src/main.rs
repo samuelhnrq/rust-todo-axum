@@ -1,7 +1,8 @@
+use migration::MigratorTrait;
 use std::error::Error;
 use std::net::SocketAddr;
 
-use axum::{routing::get, Router};
+use axum::{extract::State, http::StatusCode, routing::get, Router};
 use infra::tasks::controller::get_all_tasks;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use state::AppState;
@@ -15,12 +16,15 @@ mod state;
 mod tasks_repository;
 
 #[axum_macros::debug_handler]
-async fn ping() -> Result<&'static str, ()> {
-    return Ok("lol");
+async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
+    let ping_result = state.connection.ping().await;
+    return match ping_result {
+        Ok(_) => (StatusCode::OK, "OK"),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database is down"),
+    };
 }
 
 fn build_app(connection: DatabaseConnection) -> Router {
-    // run it with hyper on localhost:8080
     let trace = TraceLayer::new_for_http();
     return Router::new()
         .route("/todos", get(get_all_tasks))
@@ -28,7 +32,6 @@ fn build_app(connection: DatabaseConnection) -> Router {
         .route("/ping", get(ping))
         .layer(trace)
         .with_state(AppState { connection });
-    // return app;
 }
 
 #[tokio::main]
@@ -44,10 +47,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     connection_opts.sqlx_logging(
         filter
             .max_level_hint()
-            .map_or(false, |lvl| lvl >= Level::INFO),
+            .map_or(false, |lvl| lvl >= Level::DEBUG),
     );
+    connection_opts.sqlx_logging_level(log::LevelFilter::Debug);
     let connection = Database::connect(connection_opts).await?;
-    log::info!("Connection OK, Will serve on 8080");
+    log::info!("Connection OK, run migrations");
+    migration::Migrator::up(&connection, None).await?;
+    log::info!("Migrations OK, Will serve on 8080");
     let app = build_app(connection.clone());
     let service = app.into_make_service();
     let target_port: u16 =

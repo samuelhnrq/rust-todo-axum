@@ -9,11 +9,11 @@ primary_region = "cdg"
 [build]
 
 [[http_service.checks]]
-grace_period = "10s"
-interval = "30s"
+grace_period = "5s"
+interval = "15s"
 method = "GET"
 timeout = "5s"
-path = "/todos"
+path = "/ping"
 
 [env]
 RUST_LOG = "debug"
