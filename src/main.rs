@@ -2,8 +2,13 @@ use migration::MigratorTrait;
 use std::error::Error;
 use std::net::SocketAddr;
 
-use axum::{extract::State, http::StatusCode, routing::get, Router};
-use infra::tasks::controller::get_all_tasks;
+use axum::{
+    extract::State,
+    http::StatusCode,
+    routing::{get, post},
+    Router,
+};
+use infra::tasks::controller::{create_task, get_all_tasks};
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use state::AppState;
 use tower_http::trace::TraceLayer;
@@ -13,7 +18,6 @@ use tracing_subscriber::filter::EnvFilter;
 mod infra;
 mod model;
 mod state;
-mod tasks_repository;
 
 #[axum_macros::debug_handler]
 async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
@@ -25,12 +29,11 @@ async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
 }
 
 fn build_app(connection: DatabaseConnection) -> Router {
-    let trace = TraceLayer::new_for_http();
     return Router::new()
         .route("/todos", get(get_all_tasks))
-        // .route("/todos", post(create_new_todo))
+        .route("/todos", post(create_task))
         .route("/ping", get(ping))
-        .layer(trace)
+        .layer(TraceLayer::new_for_http())
         .with_state(AppState { connection });
 }
 
