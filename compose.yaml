@@ -1,0 +1,31 @@
+networks:
+  main: {}
+
+volumes:
+  db-data: {}
+
+services:
+  web:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:assowrd@db/rust-todo
+      RUST_LOG: INFO
+      PORT: 8000
+    ports:
+      - "8000:5000"
+    networks:
+      - main
+  db:
+    image: "postgres:16"
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rust-todo
+      POSTGRES_PASSWORD: assowrd
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw
+    ports:
+      - "5432:5432"
+    networks:
+      - main

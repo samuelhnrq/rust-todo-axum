@@ -1,3 +1,4 @@
+use crate::tables::Task;
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -41,13 +42,4 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(Task::Table).to_owned())
             .await
     }
-}
-
-#[derive(DeriveIden)]
-enum Task {
-    Table,
-    Id,
-    Title,
-    TaskDescription,
-    Done,
 }

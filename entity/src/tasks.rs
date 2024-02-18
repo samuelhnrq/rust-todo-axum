@@ -1,5 +1,5 @@
 use crate::generated::task::ActiveModel as TaskActiveModel;
-use sea_orm::{ActiveValue, DatabaseConnection, DbErr, EntityTrait};
+use sea_orm::{ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait};
 
 pub use crate::{Task, TaskEntity};
 
@@ -9,8 +9,15 @@ pub struct NewTask {
     pub description: Option<String>,
 }
 
-pub async fn list_all_tasks(db: &DatabaseConnection) -> Result<Vec<Task>, DbErr> {
-    return TaskEntity::find().all(db).await;
+pub async fn list_all_tasks(
+    db: &DatabaseConnection,
+    num_page: Option<u16>,
+    page_size: Option<u16>,
+) -> Result<Vec<Task>, DbErr> {
+    return TaskEntity::find()
+        .paginate(db, page_size.unwrap_or(50) as u64)
+        .fetch_page(num_page.unwrap_or(0) as u64)
+        .await;
 }
 
 pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, DbErr> {

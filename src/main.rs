@@ -29,18 +29,23 @@ async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
 }
 
 fn build_app(connection: DatabaseConnection) -> Router {
-    return Router::new()
+    Router::new()
         .route("/todos", get(get_all_tasks))
         .route("/todos", post(create_task))
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
-        .with_state(AppState { connection });
+        .with_state(AppState { connection })
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive("INFO".parse().unwrap())
+                .from_env()
+                .expect("Invalid log config"),
+        )
         .init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
@@ -56,16 +61,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let connection = Database::connect(connection_opts).await?;
     log::info!("Connection OK, run migrations");
     migration::Migrator::up(&connection, None).await?;
-    log::info!("Migrations OK, Will serve on 8080");
+    log::info!("Migrations OK");
     let app = build_app(connection.clone());
     let service = app.into_make_service();
     let target_port: u16 =
         std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
+    log::info!("Starting up server on port {}", target_port);
     let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
     axum::Server::bind(&bind_addr)
         .serve(service)
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c().await.unwrap();
+            log::warn!("Shutting down");
             connection.close().await.unwrap();
         })
         .await

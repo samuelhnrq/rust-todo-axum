@@ -15,6 +15,7 @@ axum = "0.6.20"
 axum-macros = "0.3.8"
 log = "0.4.20"
 sea-orm = { version = "0.12", features = [
+    "sqlx-sqlite",
     "sqlx-postgres",
     "runtime-tokio-native-tls",
     "macros",
