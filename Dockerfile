@@ -13,11 +13,7 @@ RUN --mount=type=cache,target=.cargo_cache \
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && \
-apt-get install -y libssl3 && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
-
 COPY --from=build /app/rust_todo /usr/bin
-
+ENV PORT=8080
+EXPOSE 8080
 CMD ["rust_todo"]
