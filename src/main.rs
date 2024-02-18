@@ -11,6 +11,7 @@ use axum::{
 use infra::tasks::controller::{create_task, get_all_tasks};
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use state::AppState;
+use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::Level;
 use tracing_subscriber::filter::EnvFilter;
@@ -66,10 +67,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let service = app.into_make_service();
     let target_port: u16 =
         std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
-    log::info!("Starting up server on port {}", target_port);
+    log::info!("Trying to bind on port {}", target_port);
     let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
-    axum::Server::bind(&bind_addr)
-        .serve(service)
+    let listener = TcpListener::bind(bind_addr).await?;
+
+    axum::serve(listener, service)
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c().await.unwrap();
             log::warn!("Shutting down");
