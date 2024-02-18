@@ -1,4 +1,3 @@
-use migration::MigratorTrait;
 use std::error::Error;
 use std::net::SocketAddr;
 
@@ -9,11 +8,9 @@ use axum::{
     Router,
 };
 use infra::tasks::controller::{create_task, get_all_tasks};
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use state::AppState;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
-use tracing::Level;
 use tracing_subscriber::filter::EnvFilter;
 
 mod infra;
@@ -29,13 +26,13 @@ async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
     };
 }
 
-fn build_app(connection: DatabaseConnection) -> Router {
+fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/todos", get(get_all_tasks))
         .route("/todos", post(create_task))
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
-        .with_state(AppState { connection })
+        .with_state(state)
 }
 
 #[tokio::main]
@@ -50,20 +47,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
-    let db_url = std::env::var("DATABASE_URL").expect("Missing env variable DATABASE_URL");
-    let filter = EnvFilter::from_default_env();
-    let mut connection_opts = ConnectOptions::new(db_url);
-    connection_opts.sqlx_logging(
-        filter
-            .max_level_hint()
-            .map_or(false, |lvl| lvl >= Level::DEBUG),
-    );
-    connection_opts.sqlx_logging_level(log::LevelFilter::Debug);
-    let connection = Database::connect(connection_opts).await?;
-    log::info!("Connection OK, run migrations");
-    migration::Migrator::up(&connection, None).await?;
-    log::info!("Migrations OK");
-    let app = build_app(connection.clone());
+    let state = AppState::new().await;
+    let app = build_app(state.clone());
     let service = app.into_make_service();
     let target_port: u16 =
         std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
@@ -75,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c().await.unwrap();
             log::warn!("Shutting down");
-            connection.close().await.unwrap();
+            state.connection.close().await.unwrap();
         })
         .await
         .expect("Failed to bind on port 8080");
