@@ -4,10 +4,14 @@ use std::net::SocketAddr;
 use axum::{
     extract::State,
     http::StatusCode,
+    middleware,
     routing::{get, post},
     Router,
 };
-use infra::tasks::controller::{create_task, get_all_tasks};
+use infra::{
+    authentication::authentication_middleware,
+    tasks::controller::{create_task, get_all_tasks},
+};
 use state::AppState;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
@@ -32,6 +36,10 @@ fn build_app(state: AppState) -> Router {
         .route("/todos", post(create_task))
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            authentication_middleware,
+        ))
         .with_state(state)
 }
 
