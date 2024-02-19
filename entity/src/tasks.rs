@@ -6,6 +6,7 @@ pub use crate::{Task, TaskEntity};
 #[derive(serde::Deserialize)]
 pub struct NewTask {
     pub title: String,
+    pub owner: i32,
     pub description: Option<String>,
 }
 
@@ -23,6 +24,7 @@ pub async fn list_all_tasks(
 pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, DbErr> {
     let mut entity = TaskActiveModel {
         title: ActiveValue::Set(task.title),
+        owner: ActiveValue::Set(task.owner),
         ..Default::default()
     };
     if let Some(desc) = task.description {

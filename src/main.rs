@@ -10,7 +10,10 @@ use axum::{
 };
 use infra::{
     authentication::authentication_middleware,
-    tasks::controller::{create_task, get_all_tasks},
+    controllers::{
+        tasks::{create_task, get_all_tasks},
+        users::{create_user, get_all_users},
+    },
 };
 use state::AppState;
 use tokio::net::TcpListener;
@@ -34,6 +37,8 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/todos", get(get_all_tasks))
         .route("/todos", post(create_task))
+        .route("/users", get(get_all_users))
+        .route("/users", post(create_user))
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
         .layer(middleware::from_fn_with_state(
@@ -57,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Initializing, connecting to the database");
     let state = AppState::new().await;
     let app = build_app(state.clone());
-    let service = app.into_make_service();
+    let service = app.into_make_service_with_connect_info::<SocketAddr>();
     let target_port: u16 =
         std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
     log::info!("Trying to bind on port {}", target_port);

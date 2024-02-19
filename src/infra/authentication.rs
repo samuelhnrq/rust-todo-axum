@@ -1,5 +1,7 @@
+use std::net::SocketAddr;
+
 use axum::{
-    extract::{Request, State},
+    extract::{ConnectInfo, Request, State},
     middleware::Next,
     response::Response,
 };
@@ -13,6 +15,7 @@ use crate::state::AppState;
 
 pub async fn authentication_middleware(
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     request: Request,
     next: Next,
 ) -> Response {
@@ -20,6 +23,11 @@ pub async fn authentication_middleware(
         .status(200)
         .body("UNAUTHORIZED".into())
         .unwrap();
+    log::debug!("Authenticating {}", addr);
+    if addr.ip().is_loopback() {
+        log::debug!("Skipping authentication, local");
+        return next.run(request).await;
+    }
     log::debug!("Getting auth header");
     let auth_header = match request.headers().get("Authorization") {
         Some(x) => x.to_str().unwrap_or(""),
@@ -31,7 +39,7 @@ pub async fn authentication_middleware(
     let (bearer, jwt) = match auth_header.split_once(' ') {
         Some(x) => x,
         None => {
-            log::warn!("wtf?");
+            log::debug!("Malformed auth token");
             return unauthorized;
         }
     };
