@@ -1,9 +1,11 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 use axum::{
     extract::{ConnectInfo, Request, State},
+    http::StatusCode,
     middleware::Next,
-    response::Response,
+    response::{IntoResponse, Response},
+    Json,
 };
 use jsonwebtoken::{
     decode,
@@ -13,18 +15,43 @@ use jsonwebtoken::{
 
 use crate::state::AppState;
 
+#[derive(serde::Serialize)]
+struct UnauthorizedError {
+    code: &'static str,
+    message: &'static str,
+}
+
+impl UnauthorizedError {
+    pub(crate) fn new(message: Option<&'static str>) -> Self {
+        UnauthorizedError {
+            code: "UNAUTHORIZED",
+            message: message.unwrap_or(""),
+        }
+    }
+}
+
+fn is_safe_requester(addr: SocketAddr) -> bool {
+    match addr.ip() {
+        IpAddr::V4(ipv4) => ipv4.is_private() || ipv4.is_loopback(),
+        IpAddr::V6(ipv6) => ipv6.is_loopback(),
+    }
+}
+
+fn build_unauthorized_response(cause: &'static str) -> Response {
+    let error = UnauthorizedError::new(Some(cause));
+    let mut unauthorized = Json(error).into_response();
+    *unauthorized.status_mut() = StatusCode::FORBIDDEN;
+    unauthorized
+}
+
 pub async fn authentication_middleware(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     request: Request,
     next: Next,
 ) -> Response {
-    let unauthorized = Response::builder()
-        .status(200)
-        .body("UNAUTHORIZED".into())
-        .unwrap();
     log::debug!("Authenticating {}", addr);
-    if addr.ip().is_loopback() {
+    if is_safe_requester(addr) {
         log::debug!("Skipping authentication, local");
         return next.run(request).await;
     }
@@ -32,7 +59,7 @@ pub async fn authentication_middleware(
     let auth_header = match request.headers().get("Authorization") {
         Some(x) => x.to_str().unwrap_or(""),
         None => {
-            return unauthorized;
+            return build_unauthorized_response("Missing Authorization header");
         }
     };
     log::debug!("Splitting auth header");
@@ -40,12 +67,12 @@ pub async fn authentication_middleware(
         Some(x) => x,
         None => {
             log::debug!("Malformed auth token");
-            return unauthorized;
+            return build_unauthorized_response("Malformed authorization header");
         }
     };
     if bearer.to_lowercase() != "bearer" {
         log::debug!("invalid token type {}", bearer);
-        return unauthorized;
+        return build_unauthorized_response("Bad token type");
     }
     log::debug!("split successfully, validating");
     let decoded = decode::<serde_json::Value>(
@@ -57,7 +84,7 @@ pub async fn authentication_middleware(
         Ok(_) => next.run(request).await,
         Err(err) => {
             log::debug!("validation failed {}", err);
-            unauthorized
+            build_unauthorized_response("JWT token failed validation")
         }
     }
 }

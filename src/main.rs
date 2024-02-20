@@ -34,17 +34,19 @@ async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
 }
 
 fn build_app(state: AppState) -> Router {
-    Router::new()
+    let private_router = Router::new()
         .route("/todos", get(get_all_tasks))
         .route("/todos", post(create_task))
         .route("/users", get(get_all_users))
         .route("/users", post(create_user))
-        .route("/ping", get(ping))
-        .layer(TraceLayer::new_for_http())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             authentication_middleware,
-        ))
+        ));
+    Router::new()
+        .route("/ping", get(ping))
+        .nest("/api", private_router)
+        .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
 
@@ -68,6 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Trying to bind on port {}", target_port);
     let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
     let listener = TcpListener::bind(bind_addr).await?;
+    log::info!("Socket bound successfully, starting app");
 
     axum::serve(listener, service)
         .with_graceful_shutdown(async {

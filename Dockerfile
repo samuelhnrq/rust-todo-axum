@@ -16,4 +16,4 @@ FROM debian:bookworm-slim
 COPY --from=build /app/rust_todo /usr/bin
 ENV PORT=8080
 EXPOSE 8080
-CMD ["rust_todo"]
+CMD ["sh", "-c", "rust_todo"]
