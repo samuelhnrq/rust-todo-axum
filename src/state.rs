@@ -1,8 +1,7 @@
 use jsonwebtoken::jwk::Jwk;
 use sea_orm::DatabaseConnection;
 
-use crate::infra::authentication::fetch_remote_jwk;
-use crate::infra::database::connect_database;
+use crate::adapters::{authentication::fetch_remote_jwk, database::connect_database};
 
 #[derive(Clone)]
 pub struct AppState {

@@ -1,6 +1,15 @@
 use std::error::Error;
 use std::net::SocketAddr;
 
+use crate::adapters::{
+    authentication::authentication_middleware,
+    controllers::{
+        tasks::{create_task, get_all_tasks},
+        users::{create_user, get_all_users},
+    },
+    static_files::static_files_service,
+};
+use adapters::views::homepage::homepage;
 use axum::{
     extract::State,
     http::StatusCode,
@@ -8,19 +17,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use infra::{
-    authentication::authentication_middleware,
-    controllers::{
-        tasks::{create_task, get_all_tasks},
-        users::{create_user, get_all_users},
-    },
-};
 use state::AppState;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::EnvFilter;
 
-mod infra;
+mod adapters;
 mod model;
 mod state;
 
@@ -45,6 +47,8 @@ fn build_app(state: AppState) -> Router {
         ));
     Router::new()
         .route("/ping", get(ping))
+        .nest_service("/public", static_files_service())
+        .route("/test", get(homepage))
         .nest("/api", private_router)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
