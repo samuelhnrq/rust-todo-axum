@@ -20,7 +20,7 @@ jobs:
           load: true
           tags: rust-todo:${{github.sha}}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy -i $IMAGE_NAME
         env:

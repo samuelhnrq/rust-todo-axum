@@ -9,7 +9,6 @@ use crate::adapters::{
     },
     static_files::static_files_service,
 };
-use adapters::views::homepage::homepage;
 use axum::{
     extract::State,
     http::StatusCode,
@@ -17,6 +16,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use rtd_views::homepage;
 use state::AppState;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;

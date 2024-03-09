@@ -1,0 +1,16 @@
+[package]
+name = "views"
+publish = false
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[lib]
+name = "rtd_views"
+path = "src/lib.rs"
+
+[dependencies]
+maud = { version = "0.26", features = ["axum"] }
+
+[lints]
+workspace = true

@@ -2,12 +2,11 @@ FROM rust:1-bookworm as build
 
 WORKDIR /app
 
+ENV CARGO_HOME=.cargo_cache
+
 COPY . ./
 RUN --mount=type=cache,target=.cargo_cache \
     --mount=type=cache,target=target \
-    --mount=type=cache,target=entity/target \
-    --mount=type=cache,target=migration/target \
-    export "CARGO_HOME=.cargo_cache" && \
     cargo build --release --locked && \
     cp target/release/rust_todo .
 

@@ -1,7 +1,8 @@
 [package]
 name = "entity"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
 publish = false
 
 [lib]
@@ -15,3 +16,6 @@ sea-orm = { version = "^0.12.0", features = [
     "runtime-tokio-rustls",
     "macros",
 ] }
+
+[lints]
+workspace = true
