@@ -11,15 +11,15 @@ jobs:
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
       - run: |
-          cargo clippy
-          cargo fmt --check
+          cargo clippy -q && echo Clippy successful
+          cargo fmt -q --check && echo Rust-fmt successful
           cargo build --release --locked
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
