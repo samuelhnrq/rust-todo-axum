@@ -16,9 +16,11 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-      - run: |
-          cargo clippy -q && echo Clippy successful
+      - name: Lint & Build
+        run: |
           cargo fmt -q --check && echo Rust-fmt successful
+          echo Building debug for clippy
+          cargo clippy && echo Clippy successful
           cargo build --release --locked
       - name: Build and push
         uses: docker/build-push-action@v5
