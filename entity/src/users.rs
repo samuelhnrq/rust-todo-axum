@@ -14,10 +14,10 @@ pub async fn list_all_users(
     num_page: Option<u16>,
     page_size: Option<u16>,
 ) -> Result<Vec<User>, DbErr> {
-    return UserEntity::find()
+    UserEntity::find()
         .paginate(db, page_size.unwrap_or(50) as u64)
         .fetch_page(num_page.unwrap_or(0) as u64)
-        .await;
+        .await
 }
 
 pub async fn new_user(user: NewUser, db: &DatabaseConnection) -> Result<User, DbErr> {
@@ -26,5 +26,5 @@ pub async fn new_user(user: NewUser, db: &DatabaseConnection) -> Result<User, Db
         email: ActiveValue::Set(user.email),
         ..Default::default()
     };
-    return UserEntity::insert(entity).exec_with_returning(db).await;
+    UserEntity::insert(entity).exec_with_returning(db).await
 }

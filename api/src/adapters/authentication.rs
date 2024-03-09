@@ -108,7 +108,7 @@ pub async fn fetch_remote_jwk() -> Jwk {
         .expect("Failed to deserialize clerk response");
     log::info!("Fetched JWKS successfully");
     resp.keys
-        .get(0)
+        .first()
         .expect("JWKS without any keys?!?!")
         .to_owned()
 }

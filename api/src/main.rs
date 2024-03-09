@@ -29,10 +29,10 @@ mod state;
 #[axum_macros::debug_handler]
 async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
     let ping_result = state.connection.ping().await;
-    return match ping_result {
+    match ping_result {
         Ok(_) => (StatusCode::OK, "OK"),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database is down"),
-    };
+    }
 }
 
 fn build_app(state: AppState) -> Router {

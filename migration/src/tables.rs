@@ -5,7 +5,7 @@ pub enum Task {
     Table,
     Id,
     Title,
-    TaskDescription,
+    Description,
     Done,
     Owner,
 }

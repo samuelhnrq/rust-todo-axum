@@ -15,10 +15,10 @@ pub async fn list_all_tasks(
     num_page: Option<u16>,
     page_size: Option<u16>,
 ) -> Result<Vec<Task>, DbErr> {
-    return TaskEntity::find()
+    TaskEntity::find()
         .paginate(db, page_size.unwrap_or(50) as u64)
         .fetch_page(num_page.unwrap_or(0) as u64)
-        .await;
+        .await
 }
 
 pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, DbErr> {
@@ -30,5 +30,5 @@ pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, Db
     if let Some(desc) = task.description {
         entity.task_description = ActiveValue::Set(desc)
     }
-    return TaskEntity::insert(entity).exec_with_returning(db).await;
+    TaskEntity::insert(entity).exec_with_returning(db).await
 }

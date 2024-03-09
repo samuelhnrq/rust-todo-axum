@@ -12,7 +12,7 @@ pub async fn get_all_users(
             log::error!("Error listing users:\n{}", err);
             (StatusCode::INTERNAL_SERVER_ERROR, "Failed to query")
         })?;
-    return Ok(Json(users));
+    Ok(Json(users))
 }
 
 #[axum_macros::debug_handler]
@@ -24,5 +24,5 @@ pub async fn create_user(
         log::error!("Failed to create user! err:\n{}", err);
         (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create")
     })?;
-    return Ok(Json(new_user));
+    Ok(Json(new_user))
 }

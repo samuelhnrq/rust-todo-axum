@@ -10,9 +10,9 @@ pub async fn get_all_tasks(
         .await
         .map_err(|err| {
             log::error!("Error listing tasks:\n{}", err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to query");
+            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to query")
         })?;
-    return Ok(Json(tasks));
+    Ok(Json(tasks))
 }
 
 #[axum_macros::debug_handler]
@@ -22,7 +22,7 @@ pub async fn create_task(
 ) -> Result<Json<Task>, (StatusCode, &'static str)> {
     let new_task = new_task(body, &state.connection).await.map_err(|err| {
         log::error!("Failed to create task! err:\n{}", err);
-        return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create");
+        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create")
     })?;
-    return Ok(Json(new_task));
+    Ok(Json(new_task))
 }

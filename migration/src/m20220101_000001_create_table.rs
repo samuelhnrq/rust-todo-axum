@@ -21,7 +21,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Task::Title).string().not_null())
                     .col(
-                        ColumnDef::new(Task::TaskDescription)
+                        ColumnDef::new(Task::Description)
                             .string()
                             .not_null()
                             .default(""),

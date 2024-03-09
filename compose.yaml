@@ -6,7 +6,9 @@ volumes:
 
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Local.Dockerfile
     depends_on:
       - db
     environment:
