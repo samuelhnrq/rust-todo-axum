@@ -19,6 +19,7 @@ use axum::{
 use rtd_views::homepage;
 use state::AppState;
 use tokio::net::TcpListener;
+use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::EnvFilter;
 
@@ -48,7 +49,7 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/ping", get(ping))
         .nest_service("/public", static_files_service())
-        .route("/test", get(homepage))
+        .route("/", get(homepage))
         .nest("/api", private_router)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -78,7 +79,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     axum::serve(listener, service)
         .with_graceful_shutdown(async {
-            tokio::signal::ctrl_c().await.unwrap();
+            let mut siggup_signal = signal(SignalKind::hangup()).unwrap();
+            let mut terminate_signal = signal(SignalKind::terminate()).unwrap();
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    log::info!("SIGINT");
+                }
+                _= terminate_signal.recv() => {
+                    log::info!("SIGTERM")
+                }
+                _ = siggup_signal.recv() => {
+                    log::info!("SIGHUP");
+                }
+            };
             log::warn!("Shutting down");
             state.connection.close().await.unwrap();
         })

@@ -20,4 +20,4 @@ COPY --from=build /app/rust_todo_api /usr/bin
 
 EXPOSE 8080
 # Avoiding recieving PID 1
-CMD ["sh", "-c", "rust_todo_api"]
+CMD ["rust_todo_api"]
