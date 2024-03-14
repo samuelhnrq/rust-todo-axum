@@ -1,6 +1,8 @@
-use crate::state::AppState;
 use axum::{extract::State, http::StatusCode, Json};
-use entity::users::{list_all_users, new_user, NewUser, User};
+use entity::{
+    users::{list_all_users, new_user, NewUser, User},
+    AppState,
+};
 
 #[axum_macros::debug_handler]
 pub async fn get_all_users(

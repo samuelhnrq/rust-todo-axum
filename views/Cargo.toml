@@ -6,11 +6,15 @@ authors.workspace = true
 edition.workspace = true
 
 [lib]
-name = "rtd_views"
+name = "views"
 path = "src/lib.rs"
 
 [dependencies]
+entity = { path = "../entity" }
+
 maud = { version = "0.26", features = ["axum"] }
+axum = { workspace = true }
+axum-macros = { workspace = true }
 
 [lints]
 workspace = true

@@ -3,6 +3,21 @@
 members = ["api", "migration", "entity", "views"]
 resolver = "2"
 
+[workspace.dependencies]
+axum = "^0.7.0"
+axum-macros = "^0.4.0"
+log = "0.4.20"
+tracing = "0.1.40"
+tracing-log = "0.2.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+sea-orm = { version = "^0.12.0", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+] }
+jsonwebtoken = { version = "9", default-features = false }
+serde = { version = "1", features = ["derive"] }
+
 [workspace.package]
 edition = "2021"
 version = "0.1.0"

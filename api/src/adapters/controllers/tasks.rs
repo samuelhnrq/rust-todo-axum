@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use entity::tasks::{list_all_tasks, new_task, NewTask, Task};
+use entity::AppState;
 
 #[axum_macros::debug_handler]
 pub async fn get_all_tasks(

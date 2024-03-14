@@ -16,12 +16,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use rtd_views::homepage;
-use state::AppState;
+use entity::AppState;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::EnvFilter;
+use views::views_router;
 
 mod adapters;
 mod model;
@@ -49,7 +49,7 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/ping", get(ping))
         .nest_service("/public", static_files_service())
-        .route("/", get(homepage))
+        .nest("/", views_router())
         .nest("/api", private_router)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
-    let state = AppState::new().await;
+    let state = state::new_state().await;
     let app = build_app(state.clone());
     let service = app.into_make_service_with_connect_info::<SocketAddr>();
     let target_port: u16 =
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 _ = tokio::signal::ctrl_c() => {
                     log::info!("SIGINT");
                 }
-                _= terminate_signal.recv() => {
+                _ = terminate_signal.recv() => {
                     log::info!("SIGTERM")
                 }
                 _ = siggup_signal.recv() => {
