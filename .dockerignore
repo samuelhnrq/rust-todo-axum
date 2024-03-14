@@ -2,4 +2,6 @@
 .idea/
 .github/
 .env
+target/debug/
+target/*/deps/
 Dockerfile

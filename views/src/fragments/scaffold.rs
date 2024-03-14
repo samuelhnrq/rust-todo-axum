@@ -1,6 +1,6 @@
 use maud::{html, Markup, DOCTYPE};
 
-const CRITICAL_CSS: &'static str = "
+const CRITICAL_CSS: &str = "
 body, html {
     margin: 0;
     font-size: 16px;
