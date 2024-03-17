@@ -8,11 +8,7 @@ use axum::{
     Json,
 };
 use entity::AppState;
-use jsonwebtoken::{
-    decode,
-    jwk::{Jwk, JwkSet},
-    Algorithm, DecodingKey, Validation,
-};
+use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, Validation};
 
 #[derive(serde::Serialize)]
 struct UnauthorizedError {
@@ -74,11 +70,7 @@ pub async fn authentication_middleware(
         return build_unauthorized_response("Bad token type");
     }
     log::debug!("split successfully, validating");
-    let decoded = decode::<serde_json::Value>(
-        jwt,
-        &DecodingKey::from_jwk(&state.jwk).unwrap(),
-        &build_validation(),
-    );
+    let decoded = decode::<serde_json::Value>(jwt, &state.jwk, &build_validation());
     match decoded {
         Ok(_) => next.run(request).await,
         Err(err) => {
@@ -95,7 +87,7 @@ fn build_validation() -> Validation {
     val
 }
 
-pub async fn fetch_remote_jwk() -> Jwk {
+pub async fn fetch_remote_jwk() -> DecodingKey {
     let base_url = std::env::var("OAUTH_ISSUER").expect("Missing clerk URL");
     let jwks_url = format!("{}/.well-known/jwks.json", base_url);
     log::info!("Fetching JWKS remotely");
@@ -106,8 +98,6 @@ pub async fn fetch_remote_jwk() -> Jwk {
         .await
         .expect("Failed to deserialize clerk response");
     log::info!("Fetched JWKS successfully");
-    resp.keys
-        .first()
-        .expect("JWKS without any keys?!?!")
-        .to_owned()
+    let jwk = resp.keys.first().expect("JWKS without any keys?!?!");
+    DecodingKey::from_jwk(jwk).unwrap()
 }

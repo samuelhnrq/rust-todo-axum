@@ -1,13 +1,20 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use entity::AppState;
-use fragments::tasks_fragment;
-use homepage::homepage;
+use fragments::{fragment_new_task, tasks_fragment};
+use pages::homepage;
 
+mod components;
 mod fragments;
-mod homepage;
+mod pages;
 
 pub fn views_router() -> Router<AppState> {
+    let fragments_router = Router::new()
+        .route("/tasks", get(tasks_fragment))
+        .route("/tasks", post(fragment_new_task));
     Router::new()
         .route("/", get(homepage))
-        .route("/fragments/wow", get(tasks_fragment))
+        .nest("/fragments", fragments_router)
 }

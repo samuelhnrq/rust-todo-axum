@@ -3,7 +3,7 @@ use sea_orm::{ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrai
 
 pub use crate::{Task, TaskEntity};
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Default)]
 pub struct NewTask {
     pub title: String,
     pub owner: i32,

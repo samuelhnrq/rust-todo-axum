@@ -1,8 +1,8 @@
-use jsonwebtoken::jwk::Jwk;
+use jsonwebtoken::DecodingKey;
 use sea_orm::DatabaseConnection;
 
 #[derive(Clone)]
 pub struct AppState {
     pub connection: DatabaseConnection,
-    pub jwk: Jwk,
+    pub jwk: DecodingKey,
 }

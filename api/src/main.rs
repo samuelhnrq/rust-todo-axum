@@ -38,8 +38,8 @@ async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
 
 fn build_app(state: AppState) -> Router {
     let private_router = Router::new()
-        .route("/todos", get(get_all_tasks))
-        .route("/todos", post(create_task))
+        .route("/tasks", get(get_all_tasks))
+        .route("/tasks", post(create_task))
         .route("/users", get(get_all_users))
         .route("/users", post(create_user))
         .layer(middleware::from_fn_with_state(
@@ -49,8 +49,8 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/ping", get(ping))
         .nest_service("/public", static_files_service())
-        .nest("/", views_router())
         .nest("/api", private_router)
+        .nest("/", views_router())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
