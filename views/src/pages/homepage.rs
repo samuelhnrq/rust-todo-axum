@@ -21,7 +21,7 @@ pub async fn homepage(State(state): State<AppState>) -> Markup {
             "Refresh list"
         }
         #new-result;
-        #new-task-form { (render_new_task(NewTask::default())) }
+        #new-task-form { (render_new_task(Ok(NewTask::default()))) }
     };
     scaffolding("Hello World", body)
 }

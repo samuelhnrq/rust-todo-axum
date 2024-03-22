@@ -16,7 +16,7 @@ sea-orm = { version = "^0.12.0", features = [
     "macros",
 ] }
 jsonwebtoken = { version = "9", default-features = false }
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "std"] }
 
 [workspace.package]
 edition = "2021"

@@ -3033,7 +3033,9 @@ dependencies = [
  "axum",
  "axum-macros",
  "entity",
+ "log",
  "maud",
+ "serde",
 ]
 
 [[package]]

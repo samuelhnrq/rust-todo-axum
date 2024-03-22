@@ -14,6 +14,8 @@ entity = { path = "../entity" }
 
 maud = { version = "0.26", features = ["axum"] }
 axum = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
 axum-macros = { workspace = true }
 
 [lints]
