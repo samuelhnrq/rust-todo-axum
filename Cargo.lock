@@ -607,6 +607,7 @@ dependencies = [
  "jsonwebtoken",
  "sea-orm",
  "serde",
+ "serde_valid",
 ]
 
 [[package]]
@@ -1111,6 +1112,7 @@ checksum = "7b0b929d511467233429c45a44ac1dcaa21ba0f5ba11e4879e6ed28ddb4f9df4"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.3",
+ "serde",
 ]
 
 [[package]]
@@ -2165,6 +2167,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_html_form"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50437e6a58912eecc08865e35ea2e8d365fbb2db0debb1c8bb43bf1faf055f25"
+dependencies = [
+ "form_urlencoded",
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+]
+
+[[package]]
 name = "serde_json"
 version = "1.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2195,6 +2210,50 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_valid"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "823830f2cbd079b394334566fb500f987deda4369ee20987bb7602b86538c6bf"
+dependencies = [
+ "indexmap",
+ "itertools",
+ "num-traits",
+ "once_cell",
+ "paste",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_valid_derive",
+ "serde_valid_literal",
+ "thiserror",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "serde_valid_derive"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8f516303a9e42c725f7e4f81bd7076219995e809e3de095318252a39c61d8fe"
+dependencies = [
+ "paste",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn 2.0.52",
+]
+
+[[package]]
+name = "serde_valid_literal"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eead3603fc2a15619aa393664afa7950f3ae80f276b8c4f0af7e98f8866eb13"
+dependencies = [
+ "paste",
+ "regex",
 ]
 
 [[package]]
@@ -3036,6 +3095,8 @@ dependencies = [
  "log",
  "maud",
  "serde",
+ "serde_html_form",
+ "serde_valid",
 ]
 
 [[package]]

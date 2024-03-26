@@ -13,6 +13,8 @@ path = "src/lib.rs"
 entity = { path = "../entity" }
 
 maud = { version = "0.26", features = ["axum"] }
+serde_html_form = "0.2.5"
+serde_valid = { workspace = true }
 axum = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }

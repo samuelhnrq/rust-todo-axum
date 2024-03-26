@@ -1,11 +1,16 @@
 use crate::generated::task::ActiveModel as TaskActiveModel;
 use sea_orm::{ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait};
+use serde_valid::Validate;
 
 pub use crate::{Task, TaskEntity};
 
-#[derive(serde::Deserialize, Default)]
+#[derive(serde::Deserialize, Default, Validate, Debug)]
 pub struct NewTask {
+    #[validate(min_length = 1)]
+    #[serde(default)]
     pub title: String,
+    #[validate(minimum = 1)]
+    #[serde(default)]
     pub owner: i32,
     pub description: Option<String>,
 }

@@ -8,6 +8,7 @@ use pages::homepage;
 
 mod components;
 mod errors;
+mod extractors;
 mod fragments;
 mod pages;
 

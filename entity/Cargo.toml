@@ -10,6 +10,7 @@ name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
+serde_valid = { workspace = true }
 serde = { workspace = true }
 sea-orm = { workspace = true }
 jsonwebtoken = { workspace = true }
