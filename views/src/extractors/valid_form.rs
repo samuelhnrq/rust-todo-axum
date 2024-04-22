@@ -64,7 +64,6 @@ fn form_content_type(headers: &HeaderMap) -> bool {
 #[derive(Debug, Clone, Default)]
 pub struct InvalidForm {
     pub deserialize_error: Option<DeserializeError>,
-    pub deserialized: Option<T>,
     pub validation_error: Option<ValidationErrors>,
 }
 

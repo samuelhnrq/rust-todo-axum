@@ -1,4 +1,10 @@
-use axum::extract::State;
+use axum::{
+    extract::{
+        rejection::{FormRejection, InvalidFormContentType},
+        State,
+    },
+    Form,
+};
 use entity::{
     tasks::{list_all_tasks, NewTask},
     AppState,
@@ -9,6 +15,12 @@ use crate::{
     components::scaffolding,
     fragments::{render_new_task, render_task_list},
 };
+
+fn build_fake_form_error() -> Result<Form<NewTask>, FormRejection> {
+    Err(FormRejection::InvalidFormContentType(
+        InvalidFormContentType::default(),
+    ))
+}
 
 #[axum_macros::debug_handler]
 pub async fn homepage(State(state): State<AppState>) -> Markup {
@@ -21,7 +33,7 @@ pub async fn homepage(State(state): State<AppState>) -> Markup {
             "Refresh list"
         }
         #new-result;
-        #new-task-form { (render_new_task(Ok(NewTask::default()))) }
+        #new-task-form { (render_new_task(state, build_fake_form_error()).await) }
     };
     scaffolding("Hello World", body)
 }
