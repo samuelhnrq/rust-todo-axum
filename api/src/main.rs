@@ -2,7 +2,6 @@ use std::error::Error;
 use std::net::SocketAddr;
 
 use crate::adapters::{
-    authentication::authentication_middleware,
     controllers::{
         tasks::{create_task, get_all_tasks},
         users::{create_user, get_all_users},
@@ -21,6 +20,7 @@ use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::EnvFilter;
+use utils::authentication::{required_login_middleware, user_data_extension};
 use views::views_router;
 
 mod adapters;
@@ -44,13 +44,17 @@ fn build_app(state: AppState) -> Router {
         .route("/users", post(create_user))
         .layer(middleware::from_fn_with_state(
             state.clone(),
-            authentication_middleware,
+            required_login_middleware,
         ));
     Router::new()
-        .route("/ping", get(ping))
-        .nest_service("/public", static_files_service())
         .nest("/api", private_router)
         .nest("/", views_router())
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            user_data_extension,
+        ))
+        .nest_service("/public", static_files_service())
+        .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

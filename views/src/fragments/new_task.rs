@@ -11,7 +11,7 @@ pub async fn fragment_new_task(
     State(state): State<AppState>,
     form_result: Result<Form<NewTask>, FormRejection>,
 ) -> Markup {
-    render_new_task(state, form_result).await
+    render_new_task(state, Some(form_result)).await
 }
 
 pub fn text_field<T: Into<String>>(
@@ -38,36 +38,33 @@ pub fn text_field<T: Into<String>>(
 
 pub async fn render_new_task(
     state: AppState,
-    task_result: Result<Form<NewTask>, FormRejection>,
+    task_result: Option<Result<Form<NewTask>, FormRejection>>,
 ) -> Markup {
-    let is_missing = task_result
-        .as_ref()
-        .err()
-        .inspect(|x| log::debug!("err out {}", x))
-        .map(|x| matches!(x, FormRejection::InvalidFormContentType(_)))
-        .unwrap_or(false);
-    let form_ok = task_result.is_ok();
-    let Form(task) = task_result.unwrap_or_default();
+    let is_missing = task_result.is_none();
+    let form_ok = matches!(task_result, Some(Ok(Form(_))));
+    let task = match task_result {
+        Some(Ok(Form(task))) => task,
+        _ => NewTask::default(),
+    };
     let error_map = if is_missing {
         PropertyErrorsMap::new()
     } else {
-        task.validate()
-            .err()
-            .inspect(|x| log::debug!("err is {}", x))
-            .map(|err| match err {
-                Errors::Object(v) => v.properties,
-                _ => PropertyErrorsMap::new(),
-            })
-            .unwrap_or_default()
+        match task.validate() {
+            Err(Errors::Object(v)) => v.properties,
+            _ => PropertyErrorsMap::new(),
+        }
     };
-    let mut uploaded = false;
-    if form_ok && error_map.is_empty() {
+    let uploaded = if form_ok && error_map.is_empty() {
         let res = entity::tasks::new_task(task.clone(), &state.connection).await;
         log::info!("wow {:?}", res.is_ok());
-        uploaded = res.is_ok();
-    }
+        res.is_ok()
+    } else {
+        false
+    };
     html! {
-        form hx-post="/fragments/task" hx-target="#new-result" "hx-on:htmx:response-error"="alert('form')" {
+        form #new-result hx-post="/fragments/task" hx-target="#new-result" "hx-on:htmx:response-error"="alert('form')" {
+            // TODO: wire from request handlers userdata extension into here as parameter
+            input type="hidden" name="owner" value=(task.owner);
             .mb-3 {
                 (text_field("title", task.title, error_map.get("title")))
             }
