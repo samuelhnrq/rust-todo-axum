@@ -55,16 +55,18 @@ pub async fn render_new_task(
         }
     };
     let uploaded = if form_ok && error_map.is_empty() {
+        log::info!("trying to add {:?}", task);
         let res = entity::tasks::new_task(task.clone(), &state.connection).await;
-        log::info!("wow {:?}", res.is_ok());
+        log::info!("wow {:?}", res);
         res.is_ok()
     } else {
+        log::info!("fun {:?}", error_map);
         false
     };
     html! {
         form #new-result hx-post="/fragments/task" hx-target="#new-result" "hx-on:htmx:response-error"="alert('form')" {
             // TODO: wire from request handlers userdata extension into here as parameter
-            input type="hidden" name="owner" value=(task.owner);
+            input type="hidden" name="owner" value=(task.owner) _="init wait 1s then set my value to Clerk.session.user.id";
             .mb-3 {
                 (text_field("title", task.title, error_map.get("title")))
             }

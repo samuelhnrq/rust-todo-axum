@@ -11,6 +11,7 @@ path = "src/lib.rs"
 
 [dependencies]
 entity = { path = "../entity" }
+utils = { path = "../utils" }
 
 maud = { version = "0.26", features = ["axum"] }
 serde_html_form = "0.2.5"

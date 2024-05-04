@@ -12,13 +12,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Users::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Users::Id)
-                            .integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(ColumnDef::new(Users::Id).string().primary_key())
                     .col(ColumnDef::new(Users::Name).string().not_null())
                     .col(ColumnDef::new(Users::Email).string().not_null())
                     .col(
@@ -40,7 +34,7 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(Task::Table)
-                    .add_column(ColumnDef::new(Task::Owner).integer().not_null())
+                    .add_column(ColumnDef::new(Task::Owner).string().not_null())
                     .to_owned(),
             )
             .await?;
@@ -51,11 +45,14 @@ impl MigrationTrait for Migration {
             .to_tbl(Users::Table)
             .to_col(Users::Id)
             .to_owned();
-        let aa = Table::alter()
-            .table(Task::Table)
-            .add_foreign_key(&owner_ref)
-            .to_owned();
-        manager.alter_table(aa).await?;
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Task::Table)
+                    .add_foreign_key(&owner_ref)
+                    .to_owned(),
+            )
+            .await?;
         Ok(())
     }
 

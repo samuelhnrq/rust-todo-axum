@@ -26,7 +26,7 @@ pub fn render_task_list(tasks: Vec<Task>) -> Markup {
                 @for task in tasks {
                     tr {
                         td { (task.title) }
-                        td { (task.task_description) }
+                        td { (task.description) }
                     }
                 }
             }

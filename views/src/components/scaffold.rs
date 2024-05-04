@@ -36,6 +36,7 @@ pub fn scaffolding(title: &'static str, children: Markup) -> Markup {
                 script src="https://unpkg.com/htmx.org@1.9.10"
                     integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
                     crossorigin="anonymous" {}
+                script defer src="https://unpkg.com/hyperscript.org@0.9.12" {}
                 banner {
                     (navbar())
                 }

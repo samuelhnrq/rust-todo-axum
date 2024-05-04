@@ -9,8 +9,8 @@ pub use crate::{Task, TaskEntity};
 pub struct NewTask {
     #[validate(min_length = 1)]
     pub title: String,
-    #[validate(minimum = 1)]
-    pub owner: i32,
+    #[validate(min_length = 1)]
+    pub owner: String,
     pub description: Option<String>,
 }
 
@@ -32,7 +32,7 @@ pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, Db
         ..Default::default()
     };
     if let Some(desc) = task.description {
-        entity.task_description = ActiveValue::Set(desc)
+        entity.description = ActiveValue::Set(desc)
     }
     TaskEntity::insert(entity).exec_with_returning(db).await
 }

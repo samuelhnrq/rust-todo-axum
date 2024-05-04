@@ -9,8 +9,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::CookieJar;
 use entity::AppState;
-use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, TokenData, Validation};
-use serde_json::Value;
+use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, Validation};
 
 #[derive(serde::Serialize)]
 struct UnauthorizedError {
@@ -25,6 +24,11 @@ impl UnauthorizedError {
             message,
         }
     }
+}
+
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct UserClaims {
+    pub sub: String,
 }
 
 impl Default for UnauthorizedError {
@@ -52,7 +56,7 @@ pub async fn required_login_middleware(
     request: Request,
     next: Next,
 ) -> Response {
-    let user_option = request.extensions().get::<TokenData<Value>>();
+    let user_option = request.extensions().get::<UserClaims>();
     if is_safe_requester(addr) || user_option.is_some() {
         next.run(request).await
     } else {
@@ -77,12 +81,12 @@ pub async fn user_data_extension(
         }
     };
     log::debug!("Cookie found, validating");
-    let decoded = decode::<Value>(&jwt, &state.jwk, &build_validation());
+    let decoded = decode::<UserClaims>(&jwt, &state.jwk, &build_validation());
     match decoded {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");
             log::debug!("Data is {:?}", session.claims);
-            request.extensions_mut().insert(session);
+            request.extensions_mut().insert(session.claims);
         }
         Err(err) => log::debug!("Token did not pass validation {:?}", err),
     }
