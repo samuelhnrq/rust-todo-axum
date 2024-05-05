@@ -16,16 +16,16 @@ pub fn navbar() -> Markup {
                     aria-label="Toggle navigation" {
                         span .fa-bars {}
                 }
-                .collapse .navbar-collapse #navbarNav {
+                span .collapse .navbar-collapse #navbarNav {
                     ul .navbar-nav {
                         li .nav-item {
-                            a .nav-link href="#" {"Home"}
+                            a .nav-link href="#" { "Home" }
                         }
                         li .nav-item {
-                            a .nav-link href="#" {"Features"}
+                            a .nav-link href="#" { "Features" }
                         }
                         li .nav-item {
-                            a .nav-link href="#" {"Pricing"}
+                            a .nav-link href="#" { "Pricing" }
                         }
                     }
                 }

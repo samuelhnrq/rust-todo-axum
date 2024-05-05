@@ -39,19 +39,16 @@ pub async fn new_task(
     state: HyperTarot,
     task_result: Option<Result<Form<NewTask>, FormRejection>>,
 ) -> Markup {
-    let is_missing = task_result.is_none();
     let form_ok = matches!(task_result, Some(Ok(Form(_))));
-    let task = match task_result {
-        Some(Ok(Form(task))) => task,
-        _ => NewTask::default(),
-    };
-    let error_map = if is_missing {
-        PropertyErrorsMap::new()
+    let task = if let Some(Ok(Form(task))) = task_result {
+        task
     } else {
-        match task.validate() {
-            Err(Errors::Object(v)) => v.properties,
-            _ => PropertyErrorsMap::new(),
-        }
+        NewTask::default()
+    };
+    let error_map = if let Err(Errors::Object(v)) = task.validate() {
+        v.properties
+    } else {
+        PropertyErrorsMap::new()
     };
     let uploaded = if form_ok && error_map.is_empty() {
         log::info!("trying to add {:?}", task);
@@ -65,7 +62,8 @@ pub async fn new_task(
     html! {
         form #new-result hx-post="/fragments/task" hx-target="#new-result" "hx-on:htmx:response-error"="alert('form')" {
             // TODO: wire from request handlers userdata extension into here as parameter
-            input type="hidden" name="owner" value=(task.owner) _="init wait 1s then set my value to Clerk.session.user.id";
+            input type="hidden" name="owner" value=(task.owner)
+                _="init wait 1s then set my value to Clerk.session.user.id";
             .mb-3 {
                 (text_field("title", task.title, error_map.get("title")))
             }
@@ -75,7 +73,7 @@ pub async fn new_task(
             div {
                 "I have been " (uploaded.to_string())
             }
-            button .btn .btn-primary type="submit" {
+            button .btn .btn-primary type="submit" _="on click add .disabled" {
                 "Submit"
             }
         }
