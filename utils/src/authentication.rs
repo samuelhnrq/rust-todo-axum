@@ -1,5 +1,6 @@
 use std::net::{IpAddr, SocketAddr};
 
+use crate::clerk_user;
 use axum::{
     extract::{ConnectInfo, Request, State},
     http::StatusCode,
@@ -8,7 +9,7 @@ use axum::{
     Json,
 };
 use axum_extra::extract::cookie::CookieJar;
-use entity::HyperTarot;
+use entity::{users, HyperTarot};
 use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, Validation};
 
 #[derive(serde::Serialize)]
@@ -64,6 +65,16 @@ pub async fn required_login_middleware(
     }
 }
 
+pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserClaims) {
+    let user_resp = clerk_user::fetch_user(&state.requests, &user.sub, jwt).await;
+    if let Ok(user) = user_resp {
+        users::upsert(user.into(), &state.connection)
+            .await
+            .err()
+            .inspect(|err| log::error!("Failed to do stuff {:?}", err));
+    }
+}
+
 pub async fn user_data_extension(
     State(state): State<HyperTarot>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -85,6 +96,7 @@ pub async fn user_data_extension(
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");
             log::debug!("Data is {:?}", session.claims);
+
             request.extensions_mut().insert(session.claims);
         }
         Err(err) => log::debug!("Token did not pass validation {:?}", err),

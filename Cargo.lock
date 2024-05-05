@@ -627,6 +627,7 @@ name = "entity"
 version = "0.1.0"
 dependencies = [
  "jsonwebtoken",
+ "reqwest",
  "sea-orm",
  "serde",
  "serde_valid",
@@ -1871,6 +1872,7 @@ dependencies = [
  "jsonwebtoken",
  "log",
  "migration",
+ "reqwest",
  "sea-orm",
  "serde",
  "tokio",

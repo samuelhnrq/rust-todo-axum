@@ -1,5 +1,7 @@
-use crate::generated::users::ActiveModel as UserActiveModel;
-use sea_orm::{ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait};
+use crate::generated::users;
+use sea_orm::{
+    sea_query::OnConflict, ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
+};
 
 pub use crate::{User, UserEntity};
 
@@ -21,10 +23,26 @@ pub async fn list_all(
 }
 
 pub async fn new_user(user: NewUser, db: &DatabaseConnection) -> Result<User, DbErr> {
-    let entity = UserActiveModel {
+    let entity = users::ActiveModel {
         name: ActiveValue::Set(user.name),
         email: ActiveValue::Set(user.email),
         ..Default::default()
     };
     UserEntity::insert(entity).exec_with_returning(db).await
+}
+
+pub async fn upsert(user: NewUser, db: &DatabaseConnection) -> Result<User, DbErr> {
+    let entity = users::ActiveModel {
+        name: ActiveValue::Set(user.name),
+        email: ActiveValue::Set(user.email),
+        ..Default::default()
+    };
+    UserEntity::insert(entity)
+        .on_conflict(
+            OnConflict::column(users::Column::Id)
+                .update_columns([users::Column::Email])
+                .to_owned(),
+        )
+        .exec_with_returning(db)
+        .await
 }
