@@ -1,13 +1,13 @@
 use axum::Form;
 use axum::{extract::State, http::StatusCode, Json};
-use entity::tasks::{list_all_tasks, new_task, NewTask, Task};
-use entity::AppState;
+use entity::tasks::{list_all, new_task, NewTask, Task};
+use entity::HyperTarot;
 
 #[axum_macros::debug_handler]
-pub async fn get_all_tasks(
-    State(state): State<AppState>,
+pub async fn get_all(
+    State(state): State<HyperTarot>,
 ) -> Result<Json<Vec<Task>>, (StatusCode, &'static str)> {
-    let tasks = list_all_tasks(&state.connection, None, None)
+    let tasks = list_all(&state.connection, None, None)
         .await
         .map_err(|err| {
             log::error!("Error listing tasks:\n{}", err);
@@ -17,8 +17,8 @@ pub async fn get_all_tasks(
 }
 
 #[axum_macros::debug_handler]
-pub async fn create_task(
-    State(state): State<AppState>,
+pub async fn create(
+    State(state): State<HyperTarot>,
     Form(body): Form<NewTask>,
 ) -> Result<Json<Task>, (StatusCode, &'static str)> {
     let new_task = new_task(body, &state.connection).await.map_err(|err| {

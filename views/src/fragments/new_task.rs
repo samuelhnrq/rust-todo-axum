@@ -2,16 +2,16 @@ use axum::{
     extract::{rejection::FormRejection, State},
     Form,
 };
-use entity::{tasks::NewTask, AppState};
+use entity::{tasks::NewTask, HyperTarot};
 use maud::{html, Markup};
 use serde_valid::{validation::Errors, validation::PropertyErrorsMap, Validate};
 
 #[axum_macros::debug_handler]
-pub async fn fragment_new_task(
-    State(state): State<AppState>,
+pub async fn fragment_controller(
+    State(state): State<HyperTarot>,
     form_result: Result<Form<NewTask>, FormRejection>,
 ) -> Markup {
-    render_new_task(state, Some(form_result)).await
+    new_task(state, Some(form_result)).await
 }
 
 pub fn text_field<T: Into<String>>(
@@ -26,18 +26,17 @@ pub fn text_field<T: Into<String>>(
             label .form-label for=(id) { "Task Description" }
             input .form-control id=(id) type="textbox" name=(field) aria-describedby=(id_desc)
                 value=(value.into());
-            @match errors {
-                Some(Errors::NewType(val)) => @for err in val {
+            @if let Some(Errors::NewType(val)) = errors {
+                @for err in val {
                     .form-text .text-danger id=(id_desc) { (err.to_string()) }
-                },
-                _ => ""
+                }
             }
         }
     }
 }
 
-pub async fn render_new_task(
-    state: AppState,
+pub async fn new_task(
+    state: HyperTarot,
     task_result: Option<Result<Form<NewTask>, FormRejection>>,
 ) -> Markup {
     let is_missing = task_result.is_none();

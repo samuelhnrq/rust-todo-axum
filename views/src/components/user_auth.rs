@@ -1,6 +1,6 @@
 use maud::{html, Markup, PreEscaped};
 
-const AUTH_SCRIPT: &'static str = include_str!("./user_auth.js");
+const AUTH_SCRIPT: &str = include_str!("./user_auth.js");
 
 pub fn user_auth() -> Markup {
     html! {

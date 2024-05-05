@@ -1,10 +1,10 @@
-use entity::AppState;
+use entity::HyperTarot;
 use utils::authentication::fetch_remote_jwk;
 
-use crate::adapters::database::connect_database;
+use crate::adapters::database;
 
-pub async fn new_state() -> AppState {
-    let connection = connect_database().await;
+pub async fn create() -> HyperTarot {
+    let connection = database::connect().await;
     let jwk = fetch_remote_jwk().await;
-    AppState { connection, jwk }
+    HyperTarot { connection, jwk }
 }

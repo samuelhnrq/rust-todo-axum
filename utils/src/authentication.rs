@@ -8,7 +8,7 @@ use axum::{
     Json,
 };
 use axum_extra::extract::cookie::CookieJar;
-use entity::AppState;
+use entity::HyperTarot;
 use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, Validation};
 
 #[derive(serde::Serialize)]
@@ -65,7 +65,7 @@ pub async fn required_login_middleware(
 }
 
 pub async fn user_data_extension(
-    State(state): State<AppState>,
+    State(state): State<HyperTarot>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     jar: CookieJar,
     mut request: Request,
@@ -73,12 +73,11 @@ pub async fn user_data_extension(
 ) -> Response {
     log::debug!("Authenticating {}", addr);
     log::debug!("Getting auth __sesion cookie");
-    let jwt: String = match jar.get("__session") {
-        Some(x) => x.value_trimmed().into(),
-        None => {
-            log::debug!("Missing __session cookie");
-            return next.run(request).await;
-        }
+    let jwt: String = if let Some(x) = jar.get("__session") {
+        x.value_trimmed().into()
+    } else {
+        log::debug!("Missing __session cookie");
+        return next.run(request).await;
     };
     log::debug!("Cookie found, validating");
     let decoded = decode::<UserClaims>(&jwt, &state.jwk, &build_validation());
@@ -99,9 +98,11 @@ fn build_validation() -> Validation {
     val
 }
 
+/// # Panics
+/// if cant get the JWKS
 pub async fn fetch_remote_jwk() -> DecodingKey {
     let base_url = std::env::var("OAUTH_ISSUER").expect("Missing clerk URL");
-    let jwks_url = format!("{}/.well-known/jwks.json", base_url);
+    let jwks_url = format!("{base_url}/.well-known/jwks.json");
     log::info!("Fetching JWKS remotely");
     let resp = reqwest::get(jwks_url)
         .await

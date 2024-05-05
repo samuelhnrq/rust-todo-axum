@@ -2,11 +2,8 @@ use std::error::Error;
 use std::net::SocketAddr;
 
 use crate::adapters::{
-    controllers::{
-        tasks::{create_task, get_all_tasks},
-        users::{create_user, get_all_users},
-    },
-    static_files::static_files_service,
+    controllers::{tasks, users},
+    static_files::build_service,
 };
 use axum::{
     extract::State,
@@ -15,7 +12,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use entity::AppState;
+use entity::HyperTarot;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
@@ -28,20 +25,20 @@ mod model;
 mod state;
 
 #[axum_macros::debug_handler]
-async fn ping(State(state): State<AppState>) -> (StatusCode, &'static str) {
+async fn ping(State(state): State<HyperTarot>) -> (StatusCode, &'static str) {
     let ping_result = state.connection.ping().await;
     match ping_result {
-        Ok(_) => (StatusCode::OK, "OK"),
+        Ok(()) => (StatusCode::OK, "OK"),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database is down"),
     }
 }
 
-fn build_app(state: AppState) -> Router {
+fn build_app(state: HyperTarot) -> Router {
     let private_router = Router::new()
-        .route("/tasks", get(get_all_tasks))
-        .route("/tasks", post(create_task))
-        .route("/users", get(get_all_users))
-        .route("/users", post(create_user))
+        .route("/tasks", get(tasks::get_all))
+        .route("/tasks", post(tasks::create))
+        .route("/users", get(users::get_all))
+        .route("/users", post(users::create))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             required_login_middleware,
@@ -53,7 +50,7 @@ fn build_app(state: AppState) -> Router {
             state.clone(),
             user_data_extension,
         ))
-        .nest_service("/public", static_files_service())
+        .nest_service("/public", build_service())
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -71,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
-    let state = state::new_state().await;
+    let state = state::create().await;
     let app = build_app(state.clone());
     let service = app.into_make_service_with_connect_info::<SocketAddr>();
     let target_port: u16 =
@@ -90,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     log::info!("SIGINT");
                 }
                 _ = terminate_signal.recv() => {
-                    log::info!("SIGTERM")
+                    log::info!("SIGTERM");
                 }
                 _ = siggup_signal.recv() => {
                     log::info!("SIGHUP");

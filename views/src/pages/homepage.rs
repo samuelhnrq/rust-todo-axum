@@ -1,23 +1,23 @@
 use axum::extract::State;
-use entity::{tasks::list_all_tasks, AppState};
+use entity::{tasks::list_all, HyperTarot};
 use maud::{html, Markup};
 
 use crate::{
     components::scaffolding,
-    fragments::{render_new_task, render_task_list},
+    fragments::{list_tasks, new_task},
 };
 
 #[axum_macros::debug_handler]
-pub async fn homepage(State(state): State<AppState>) -> Markup {
-    let tasks_result = list_all_tasks(&state.connection, None, None).await.unwrap();
+pub async fn homepage(State(state): State<HyperTarot>) -> Markup {
+    let tasks_result = list_all(&state.connection, None, None).await.unwrap();
     let body = html! {
         h1.display-2 { "Hello HTMX!" }
         h1 { "Available tasks" }
-        #test { (render_task_list(tasks_result)) }
+        #test { (list_tasks(tasks_result)) }
         button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target="#test" {
             "Refresh list"
         }
-        #new-task-form { (render_new_task(state, None).await) }
+        #new-task-form { (new_task(state, None).await) }
     };
-    scaffolding("Hello World", body)
+    scaffolding("Hello World", &body)
 }

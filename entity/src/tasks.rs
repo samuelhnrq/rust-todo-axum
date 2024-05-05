@@ -14,14 +14,14 @@ pub struct NewTask {
     pub description: Option<String>,
 }
 
-pub async fn list_all_tasks(
+pub async fn list_all(
     db: &DatabaseConnection,
     num_page: Option<u16>,
     page_size: Option<u16>,
 ) -> Result<Vec<Task>, DbErr> {
     TaskEntity::find()
-        .paginate(db, page_size.unwrap_or(50) as u64)
-        .fetch_page(num_page.unwrap_or(0) as u64)
+        .paginate(db, u64::from(page_size.unwrap_or(50)))
+        .fetch_page(u64::from(num_page.unwrap_or(0)))
         .await
 }
 
@@ -32,7 +32,7 @@ pub async fn new_task(task: NewTask, db: &DatabaseConnection) -> Result<Task, Db
         ..Default::default()
     };
     if let Some(desc) = task.description {
-        entity.description = ActiveValue::Set(desc)
+        entity.description = ActiveValue::Set(desc);
     }
     TaskEntity::insert(entity).exec_with_returning(db).await
 }

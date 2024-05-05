@@ -19,8 +19,7 @@ jobs:
       - name: Lint & Build
         run: |
           cargo fmt -q --check && echo Rust-fmt successful
-          echo Building debug for clippy
-          cargo clippy && echo Clippy successful
+          cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
       - name: Build and push
         uses: docker/build-push-action@v5

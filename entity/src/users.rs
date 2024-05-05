@@ -9,14 +9,14 @@ pub struct NewUser {
     pub email: String,
 }
 
-pub async fn list_all_users(
+pub async fn list_all(
     db: &DatabaseConnection,
     num_page: Option<u16>,
     page_size: Option<u16>,
 ) -> Result<Vec<User>, DbErr> {
     UserEntity::find()
-        .paginate(db, page_size.unwrap_or(50) as u64)
-        .fetch_page(num_page.unwrap_or(0) as u64)
+        .paginate(db, u64::from(page_size.unwrap_or(50)))
+        .fetch_page(u64::from(num_page.unwrap_or(0)))
         .await
 }
 

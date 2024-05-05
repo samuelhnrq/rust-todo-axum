@@ -15,7 +15,7 @@ button {
 }
 ";
 
-pub fn scaffolding(title: &'static str, children: Markup) -> Markup {
+pub fn scaffolding(title: &'static str, children: &Markup) -> Markup {
     html! {
         (DOCTYPE)
         html {
