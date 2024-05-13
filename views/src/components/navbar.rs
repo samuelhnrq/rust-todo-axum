@@ -2,6 +2,7 @@ use maud::{html, Markup};
 
 use crate::components::user_auth::user_auth;
 
+// TODO recieve user here?
 pub fn navbar() -> Markup {
     html! {
         nav .navbar .navbar-expand-lg .bg-body-tertiary {

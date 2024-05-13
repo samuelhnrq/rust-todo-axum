@@ -1,4 +1,4 @@
-async function initClerkComponents() {
+async function initAuth() {
   let signIn = document.getElementById("sign-in");
   let container = document.getElementById("clerk-container");
   await Clerk.load();
@@ -14,4 +14,6 @@ async function initClerkComponents() {
   }
 }
 
-window.addEventListener("load", initClerkComponents, { once: true });
+document
+  .getElementById("auth-script-tag")
+  .addEventListener("load", initAuth, { once: true });

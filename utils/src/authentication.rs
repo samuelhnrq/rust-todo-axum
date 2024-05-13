@@ -1,4 +1,7 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    env,
+    net::{IpAddr, SocketAddr},
+};
 
 use crate::clerk_user;
 use axum::{
@@ -10,7 +13,17 @@ use axum::{
 };
 use axum_extra::extract::cookie::CookieJar;
 use entity::{users, HyperTarot};
-use jsonwebtoken::{decode, jwk::JwkSet, Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{
+    decode,
+    jwk::{Jwk, JwkSet, PublicKeyUse},
+    Algorithm, DecodingKey, Validation,
+};
+use openidconnect::{
+    core::{CoreClient, CoreProviderMetadata},
+    reqwest::async_http_client,
+    AccessToken, ClientId, ClientSecret, EmptyAdditionalClaims, GenderClaim, IdToken, IssuerUrl,
+    StandardClaims, SubjectIdentifier, UserInfoClaims,
+};
 
 #[derive(serde::Serialize)]
 struct UnauthorizedError {
@@ -110,19 +123,48 @@ fn build_validation() -> Validation {
     val
 }
 
+pub async fn core_client_factory() -> CoreClient {
+    // http://localhost:8888/realms/master/.well-known/openid-configuration
+    let issuers = env::var("OPENID_AUTODISCOVER").expect("Missing $OPENID_AUTODISCOVER");
+    let issuer_url = IssuerUrl::new(issuers).expect("Inavalid $OPENID_AUTODISCOVER url");
+    let provider_metadata = CoreProviderMetadata::discover_async(issuer_url, async_http_client)
+        .await
+        .expect("Failed to fetch OpenID metadata");
+    let client_id = env::var("OAUTH_CLIENT_ID").expect("Missing $OAUTH_CLIENT_ID");
+    let client_secret = env::var("OAUTH_CLIENT_SECRET").expect("Missing $OAUTH_CLIENT_SECRET");
+    // Create an OpenID Connect client by specifying the client ID, client secret, authorization URL
+    // and token URL.
+    CoreClient::from_provider_metadata(
+        provider_metadata,
+        ClientId::new(client_id),
+        Some(ClientSecret::new(client_secret)),
+    )
+}
+
 /// # Panics
 /// if cant get the JWKS
 pub async fn fetch_remote_jwk() -> DecodingKey {
-    let base_url = std::env::var("OAUTH_ISSUER").expect("Missing clerk URL");
-    let jwks_url = format!("{base_url}/.well-known/jwks.json");
+    let jwks_url = std::env::var("JWKS_URL").expect("Missing $JWKS_URI");
     log::info!("Fetching JWKS remotely");
     let resp = reqwest::get(jwks_url)
         .await
         .expect("Failed to rearch clerk, invalid URL?")
         .json::<JwkSet>()
         .await
-        .expect("Failed to deserialize clerk response");
+        .expect("Failed to deserialize JWKS response");
     log::info!("Fetched JWKS successfully");
-    let jwk = resp.keys.first().expect("JWKS without any keys?!?!");
+    let jwk = resp
+        .keys
+        .iter()
+        .filter(is_sig_key)
+        .next()
+        .expect("JWKS without any sig keys?!?!");
     DecodingKey::from_jwk(jwk).unwrap()
+}
+
+fn is_sig_key(key: &&Jwk) -> bool {
+    key.common
+        .public_key_use
+        .as_ref()
+        .is_some_and(|k| *k == PublicKeyUse::Signature)
 }

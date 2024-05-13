@@ -1,6 +1,6 @@
 use entity::HyperTarot;
 use reqwest::Client;
-use utils::authentication::fetch_remote_jwk;
+use utils::authentication::{core_client_factory, fetch_remote_jwk};
 
 use crate::adapters::database;
 
@@ -10,6 +10,7 @@ pub async fn create() -> HyperTarot {
     HyperTarot {
         connection,
         jwk,
+        auth_client: core_client_factory().await,
         requests: Client::new(),
     }
 }

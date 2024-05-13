@@ -7,5 +7,5 @@ pub fn build_service() -> ServeDir {
     if !dest_exists {
         log::warn!("$WWW_STATIC_FILES '{}' folder not found", dest);
     }
-    ServeDir::new(resolved)
+    ServeDir::new(resolved).precompressed_br()
 }
