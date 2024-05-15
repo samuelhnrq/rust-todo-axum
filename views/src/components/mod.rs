@@ -1,5 +1,6 @@
 mod navbar;
 mod scaffold;
-mod user_auth;
+mod spinner;
 
-pub use scaffold::scaffolding;
+pub(crate) use scaffold::scaffolding;
+pub(crate) use spinner::spinner;

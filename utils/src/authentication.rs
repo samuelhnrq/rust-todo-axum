@@ -21,8 +21,7 @@ use jsonwebtoken::{
 use openidconnect::{
     core::{CoreClient, CoreProviderMetadata},
     reqwest::async_http_client,
-    AccessToken, ClientId, ClientSecret, EmptyAdditionalClaims, GenderClaim, IdToken, IssuerUrl,
-    StandardClaims, SubjectIdentifier, UserInfoClaims,
+    ClientId, ClientSecret, IssuerUrl,
 };
 
 #[derive(serde::Serialize)]
@@ -40,8 +39,10 @@ impl UnauthorizedError {
     }
 }
 
+pub type AuthData<'a> = (Option<UserData>, &'a CoreClient);
+
 #[derive(serde::Deserialize, Clone, Debug)]
-pub struct UserClaims {
+pub struct UserData {
     pub sub: String,
 }
 
@@ -70,7 +71,7 @@ pub async fn required_login_middleware(
     request: Request,
     next: Next,
 ) -> Response {
-    let user_option = request.extensions().get::<UserClaims>();
+    let user_option = request.extensions().get::<UserData>();
     if is_safe_requester(addr) || user_option.is_some() {
         next.run(request).await
     } else {
@@ -78,7 +79,7 @@ pub async fn required_login_middleware(
     }
 }
 
-pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserClaims) {
+pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserData) {
     let user_resp = clerk_user::fetch_user(&state.requests, &user.sub, jwt).await;
     if let Ok(user) = user_resp {
         users::upsert(user.into(), &state.connection)
@@ -104,7 +105,7 @@ pub async fn user_data_extension(
         return next.run(request).await;
     };
     log::debug!("Cookie found, validating");
-    let decoded = decode::<UserClaims>(&jwt, &state.jwk, &build_validation());
+    let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
     match decoded {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");
@@ -123,6 +124,8 @@ fn build_validation() -> Validation {
     val
 }
 
+/// # Panics
+/// Somethign
 pub async fn core_client_factory() -> CoreClient {
     // http://localhost:8888/realms/master/.well-known/openid-configuration
     let issuers = env::var("OPENID_AUTODISCOVER").expect("Missing $OPENID_AUTODISCOVER");
@@ -156,13 +159,12 @@ pub async fn fetch_remote_jwk() -> DecodingKey {
     let jwk = resp
         .keys
         .iter()
-        .filter(is_sig_key)
-        .next()
+        .find(|&x| is_sig_key(x))
         .expect("JWKS without any sig keys?!?!");
     DecodingKey::from_jwk(jwk).unwrap()
 }
 
-fn is_sig_key(key: &&Jwk) -> bool {
+fn is_sig_key(key: &Jwk) -> bool {
     key.common
         .public_key_use
         .as_ref()

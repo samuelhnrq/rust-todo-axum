@@ -1,9 +1,8 @@
 use maud::{html, Markup};
 
-use crate::components::user_auth::user_auth;
+use super::spinner;
 
-// TODO recieve user here?
-pub fn navbar() -> Markup {
+pub(crate) fn navbar() -> Markup {
     html! {
         nav .navbar .navbar-expand-lg .bg-body-tertiary {
             .container-fluid {
@@ -30,7 +29,9 @@ pub fn navbar() -> Markup {
                         }
                     }
                 }
-                (user_auth())
+                div hx-get="/fragments/login" hx-trigger="load" {
+                    (spinner())
+                }
             }
         }
     }

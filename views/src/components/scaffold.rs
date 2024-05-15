@@ -5,7 +5,7 @@ const CRITICAL_CSS: &str = include_str!("scaffold.css");
 const BASIC_JS: &str = include_str!("scaffold.js");
 
 // TODO: Reciever user login status here
-pub fn scaffolding(title: &'static str, children: &Markup) -> Markup {
+pub(crate) fn scaffolding(title: &'static str, children: &Markup) -> Markup {
     html! {
         (DOCTYPE)
         html {

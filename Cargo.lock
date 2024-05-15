@@ -3692,10 +3692,12 @@ name = "views"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum-extra",
  "axum-macros",
  "entity",
  "log",
  "maud",
+ "openidconnect",
  "serde",
  "serde_html_form",
  "serde_valid",

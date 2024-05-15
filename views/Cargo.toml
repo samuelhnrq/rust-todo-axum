@@ -17,7 +17,9 @@ maud = { version = "0.26", features = ["axum"] }
 serde_html_form = "0.2.5"
 serde_valid = { workspace = true }
 axum = { workspace = true }
+axum-extra = { workspace = true }
 log = { workspace = true }
+openidconnect = { workspace = true }
 serde = { workspace = true }
 axum-macros = { workspace = true }
 
