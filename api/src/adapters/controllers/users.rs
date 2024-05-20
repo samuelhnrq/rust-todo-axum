@@ -1,8 +1,6 @@
 use axum::{extract::State, http::StatusCode, Json};
-use entity::{
-    users::{list_all, new_user, NewUser, User},
-    HyperTarot,
-};
+use entity::users::{list_all, new_user, NewUser, User};
+use utils::state::HyperTarot;
 
 #[axum_macros::debug_handler]
 pub async fn get_all(

@@ -1,7 +1,8 @@
 use tower_http::services::ServeDir;
+use utils::config::LOADED_CONFIG;
 
 pub fn build_service() -> ServeDir {
-    let dest = std::env::var("WWW_STATIC_FILES").unwrap_or("variable not set".into());
+    let dest = LOADED_CONFIG.www_static_files.clone();
     let resolved = std::fs::canonicalize(&dest).unwrap_or_default();
     let dest_exists = std::fs::metadata(&resolved).is_ok();
     if !dest_exists {

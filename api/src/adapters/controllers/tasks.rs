@@ -1,7 +1,7 @@
 use axum::Form;
 use axum::{extract::State, http::StatusCode, Json};
 use entity::tasks::{list_all, new_task, NewTask, Task};
-use entity::HyperTarot;
+use utils::state::HyperTarot;
 
 #[axum_macros::debug_handler]
 pub async fn get_all(

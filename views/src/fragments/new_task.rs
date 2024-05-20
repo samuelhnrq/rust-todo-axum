@@ -2,9 +2,10 @@ use axum::{
     extract::{rejection::FormRejection, State},
     Form,
 };
-use entity::{tasks::NewTask, HyperTarot};
+use entity::tasks::NewTask;
 use maud::{html, Markup};
 use serde_valid::{validation::Errors, validation::PropertyErrorsMap, Validate};
+use utils::state::HyperTarot;
 
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(
@@ -51,12 +52,9 @@ pub async fn new_task(
         PropertyErrorsMap::new()
     };
     let uploaded = if form_ok && error_map.is_empty() {
-        log::info!("trying to add {:?}", task);
         let res = entity::tasks::new_task(task.clone(), &state.connection).await;
-        log::info!("wow {:?}", res);
         res.is_ok()
     } else {
-        log::info!("fun {:?}", error_map);
         false
     };
     html! {

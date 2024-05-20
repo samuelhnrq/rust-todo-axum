@@ -2,11 +2,11 @@ use migration::MigratorTrait;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
+use utils::config::LOADED_CONFIG;
 
 pub async fn connect() -> DatabaseConnection {
     let filter = EnvFilter::from_default_env();
-    let db_url = std::env::var("DATABASE_URL").expect("Missing env variable DATABASE_URL");
-    let mut connection_opts = ConnectOptions::new(db_url);
+    let mut connection_opts = ConnectOptions::new(LOADED_CONFIG.database_url.clone());
     connection_opts.sqlx_logging(
         filter
             .max_level_hint()

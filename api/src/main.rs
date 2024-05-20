@@ -12,16 +12,15 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use entity::HyperTarot;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::EnvFilter;
-use utils::authentication::{required_login_middleware, user_data_extension};
+use utils::authentication::{handle_redirect, required_login_middleware, user_data_extension};
+use utils::state::HyperTarot;
 use views::views_router;
 
 mod adapters;
-mod model;
 mod state;
 
 #[axum_macros::debug_handler]
@@ -50,13 +49,14 @@ fn build_app(state: HyperTarot) -> Router {
             state.clone(),
             user_data_extension,
         ))
+        .route("/auth/redirect", get(handle_redirect))
         .nest_service("/public", build_service())
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt()
         .with_env_filter(

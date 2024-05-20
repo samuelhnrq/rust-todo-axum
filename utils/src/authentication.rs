@@ -1,18 +1,18 @@
-use std::{
-    env,
-    net::{IpAddr, SocketAddr},
-};
+use std::net::{IpAddr, SocketAddr};
 
-use crate::clerk_user;
+use crate::{clerk_user, config::LOADED_CONFIG, state::HyperTarot};
 use axum::{
-    extract::{ConnectInfo, Request, State},
+    extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     Json,
 };
-use axum_extra::extract::cookie::CookieJar;
-use entity::{users, HyperTarot};
+use axum_extra::extract::{
+    cookie::{Cookie, CookieJar},
+    PrivateCookieJar,
+};
+use entity::users;
 use jsonwebtoken::{
     decode,
     jwk::{Jwk, JwkSet, PublicKeyUse},
@@ -21,7 +21,7 @@ use jsonwebtoken::{
 use openidconnect::{
     core::{CoreClient, CoreProviderMetadata},
     reqwest::async_http_client,
-    ClientId, ClientSecret, IssuerUrl,
+    AuthorizationCode, ClientId, ClientSecret, IssuerUrl, OAuth2TokenResponse,
 };
 
 #[derive(serde::Serialize)]
@@ -38,8 +38,6 @@ impl UnauthorizedError {
         }
     }
 }
-
-pub type AuthData<'a> = (Option<UserData>, &'a CoreClient);
 
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct UserData {
@@ -126,28 +124,60 @@ fn build_validation() -> Validation {
 
 /// # Panics
 /// Somethign
-pub async fn core_client_factory() -> CoreClient {
-    // http://localhost:8888/realms/master/.well-known/openid-configuration
-    let issuers = env::var("OPENID_AUTODISCOVER").expect("Missing $OPENID_AUTODISCOVER");
-    let issuer_url = IssuerUrl::new(issuers).expect("Inavalid $OPENID_AUTODISCOVER url");
+pub async fn core_client_factory() -> (CoreClient, CoreProviderMetadata) {
+    let issuer_url = IssuerUrl::from_url(LOADED_CONFIG.oauth_autodiscover_url.clone());
     let provider_metadata = CoreProviderMetadata::discover_async(issuer_url, async_http_client)
         .await
         .expect("Failed to fetch OpenID metadata");
-    let client_id = env::var("OAUTH_CLIENT_ID").expect("Missing $OAUTH_CLIENT_ID");
-    let client_secret = env::var("OAUTH_CLIENT_SECRET").expect("Missing $OAUTH_CLIENT_SECRET");
-    // Create an OpenID Connect client by specifying the client ID, client secret, authorization URL
-    // and token URL.
-    CoreClient::from_provider_metadata(
-        provider_metadata,
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-    )
+    let client = CoreClient::from_provider_metadata(
+        provider_metadata.clone(),
+        ClientId::new(LOADED_CONFIG.oauth_client_id.clone()),
+        Some(ClientSecret::new(LOADED_CONFIG.oauth_client_secret.clone())),
+    );
+    (client, provider_metadata)
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct AuthRedirectQuery {
+    pub state: String,
+    pub session_state: String,
+    pub iss: String,
+    pub code: String,
+}
+
+#[axum_macros::debug_handler]
+pub async fn handle_redirect(
+    State(state): State<HyperTarot>,
+    query: Query<AuthRedirectQuery>,
+    cookies: PrivateCookieJar,
+) -> impl IntoResponse {
+    let parts = cookies
+        .get("auth_tokens")
+        .map(|x| x.value().to_string())
+        .unwrap_or_default();
+    let tokens: Vec<&str> = parts.split('#').collect();
+    if tokens.len() != 3 {
+        log::info!("Failed to do stuff");
+        return (cookies, Redirect::temporary("http://localhost:8080/"));
+    }
+    let response = state
+        .auth_client
+        .exchange_code(AuthorizationCode::new(query.code.clone()))
+        .request_async(openidconnect::reqwest::async_http_client)
+        .await;
+    let final_jar = match response {
+        Ok(code) => cookies.add(Cookie::new("amazing", code.access_token().secret().clone())),
+        Err(err) => {
+            log::error!("Could not exchange {:?}", err);
+            cookies
+        }
+    };
+    (final_jar, Redirect::temporary("http://localhost:8080/"))
 }
 
 /// # Panics
 /// if cant get the JWKS
-pub async fn fetch_remote_jwk() -> DecodingKey {
-    let jwks_url = std::env::var("JWKS_URL").expect("Missing $JWKS_URI");
+pub async fn fetch_remote_jwk(jwks_url: String) -> DecodingKey {
     log::info!("Fetching JWKS remotely");
     let resp = reqwest::get(jwks_url)
         .await

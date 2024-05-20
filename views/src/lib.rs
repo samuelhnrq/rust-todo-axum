@@ -2,9 +2,9 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use entity::HyperTarot;
 use fragments::{list_tasks_controller, new_tasks_controller, user_fragment_controller};
 use pages::homepage;
+use utils::state::HyperTarot;
 
 mod components;
 mod errors;

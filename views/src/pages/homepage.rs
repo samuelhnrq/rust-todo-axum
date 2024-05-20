@@ -1,6 +1,7 @@
 use axum::extract::State;
-use entity::{tasks::list_all, HyperTarot};
+use entity::tasks::list_all;
 use maud::{html, Markup};
+use utils::state::HyperTarot;
 
 use crate::{
     components::scaffolding,

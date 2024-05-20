@@ -1,7 +1,8 @@
 use super::error::build_error_fragment;
 use axum::extract::State;
-use entity::{tasks::list_all, HyperTarot, Task};
+use entity::{tasks::list_all, Task};
 use maud::{html, Markup};
+use utils::state::HyperTarot;
 
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(State(state): State<HyperTarot>) -> Markup {
