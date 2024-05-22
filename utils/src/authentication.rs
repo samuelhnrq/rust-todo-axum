@@ -1,6 +1,6 @@
 use std::net::{IpAddr, SocketAddr};
 
-use crate::{clerk_user, config::LOADED_CONFIG, state::HyperTarot};
+use crate::{clerk_user, config::LOADED_CONFIG, safe_cookie, state::HyperTarot};
 use axum::{
     extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
@@ -8,10 +8,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
     Json,
 };
-use axum_extra::extract::{
-    cookie::{Cookie, CookieJar},
-    PrivateCookieJar,
-};
+use axum_extra::extract::PrivateCookieJar;
 use entity::users;
 use jsonwebtoken::{
     decode,
@@ -21,7 +18,9 @@ use jsonwebtoken::{
 use openidconnect::{
     core::{CoreClient, CoreProviderMetadata},
     reqwest::async_http_client,
-    AuthorizationCode, ClientId, ClientSecret, IssuerUrl, OAuth2TokenResponse,
+    url::Url,
+    AuthorizationCode, ClientId, ClientSecret, IssuerUrl, OAuth2TokenResponse, PkceCodeVerifier,
+    RedirectUrl,
 };
 
 #[derive(serde::Serialize)]
@@ -90,7 +89,7 @@ pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserData
 pub async fn user_data_extension(
     State(state): State<HyperTarot>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    jar: CookieJar,
+    jar: PrivateCookieJar,
     mut request: Request,
     next: Next,
 ) -> Response {
@@ -111,14 +110,17 @@ pub async fn user_data_extension(
 
             request.extensions_mut().insert(session.claims);
         }
-        Err(err) => log::debug!("Token did not pass validation {:?}", err),
+        Err(err) => {
+            log::debug!("Token did not pass validation {:?}", err);
+            log::debug!("token was '{}'", jwt);
+        }
     }
     next.run(request).await
 }
 
 fn build_validation() -> Validation {
     let mut val = Validation::new(Algorithm::RS256);
-    val.set_audience(&["hyper-tarot-rs"]);
+    val.set_audience(&["hyper-tarot"]);
     val
 }
 
@@ -129,11 +131,14 @@ pub async fn core_client_factory() -> (CoreClient, CoreProviderMetadata) {
     let provider_metadata = CoreProviderMetadata::discover_async(issuer_url, async_http_client)
         .await
         .expect("Failed to fetch OpenID metadata");
+    let mut url = Url::parse(LOADED_CONFIG.host_name.as_str()).unwrap();
+    url.set_path("/auth/redirect");
     let client = CoreClient::from_provider_metadata(
         provider_metadata.clone(),
         ClientId::new(LOADED_CONFIG.oauth_client_id.clone()),
         Some(ClientSecret::new(LOADED_CONFIG.oauth_client_secret.clone())),
-    );
+    )
+    .set_redirect_uri(RedirectUrl::from_url(url));
     (client, provider_metadata)
 }
 
@@ -157,18 +162,22 @@ pub async fn handle_redirect(
         .unwrap_or_default();
     let tokens: Vec<&str> = parts.split('#').collect();
     if tokens.len() != 3 {
-        log::info!("Failed to do stuff");
+        log::error!("invalid cookie value {}", parts);
         return (cookies, Redirect::temporary("http://localhost:8080/"));
     }
     let response = state
         .auth_client
         .exchange_code(AuthorizationCode::new(query.code.clone()))
+        .set_pkce_verifier(PkceCodeVerifier::new(tokens[1].to_string()))
         .request_async(openidconnect::reqwest::async_http_client)
         .await;
     let final_jar = match response {
-        Ok(code) => cookies.add(Cookie::new("amazing", code.access_token().secret().clone())),
+        Ok(code) => cookies.add(safe_cookie(
+            "__session",
+            code.access_token().secret().trim_matches('"'),
+        )),
         Err(err) => {
-            log::error!("Could not exchange {:?}", err);
+            log::error!("Failed to exchange token {:?}", err);
             cookies
         }
     };

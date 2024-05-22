@@ -1,21 +1,20 @@
-use std::{borrow::Cow, cell::RefCell};
+use std::cell::RefCell;
 
-use axum::{extract::State, Extension};
+use axum::{extract::State, http::HeaderMap, Extension};
 use axum_extra::extract::PrivateCookieJar;
 use maud::{html, Markup};
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient},
-    url::Url,
-    CsrfToken, Nonce, PkceCodeChallenge, RedirectUrl, Scope,
+    CsrfToken, Nonce, PkceCodeChallenge, Scope,
 };
-use utils::{authentication::UserData, config::LOADED_CONFIG, safe_cookie, state::HyperTarot};
+use utils::{authentication::UserData, safe_cookie, state::HyperTarot};
 
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(
     State(state): State<HyperTarot>,
     maybe_user: Option<Extension<UserData>>,
     jar: PrivateCookieJar,
-) -> (PrivateCookieJar, Markup) {
+) -> (PrivateCookieJar, HeaderMap, Markup) {
     let boxed_jar = RefCell::new(jar);
     let params = AuthParams {
         jar: &boxed_jar,
@@ -23,7 +22,12 @@ pub async fn fragment_controller(
         user: maybe_user.map(|Extension(user)| user),
     };
     let html_result = user_auth(&params);
-    (boxed_jar.into_inner(), html_result)
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Cache-Control",
+        "max-age=5,must-revalidate,private".parse().unwrap(),
+    );
+    (boxed_jar.into_inner(), headers, html_result)
 }
 
 struct AuthParams<'a> {
@@ -32,10 +36,8 @@ struct AuthParams<'a> {
     oauth_client: &'a CoreClient,
 }
 
-fn no_user(params: &AuthParams) -> Markup {
+fn login_button(params: &AuthParams) -> Markup {
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-    let mut url = Url::parse(LOADED_CONFIG.host_name.as_str()).unwrap();
-    url.set_path("/auth/redirect");
     let (url, crsf_token, nonce) = params
         .oauth_client
         .authorize_url(
@@ -43,8 +45,8 @@ fn no_user(params: &AuthParams) -> Markup {
             CsrfToken::new_random,
             Nonce::new_random,
         )
-        .set_redirect_uri(Cow::Owned(RedirectUrl::from_url(url)))
         .add_scope(Scope::new("openid".into()))
+        .add_scope(Scope::new("offline_access".into()))
         .set_pkce_challenge(pkce_challenge)
         .url();
     params.jar.replace_with(|old_jar| {
@@ -67,7 +69,7 @@ fn user_auth(params: &AuthParams) -> Markup {
     html! {
         @match params.user.as_ref() {
             Some(user) => div { "got user " (user.sub) } ,
-            None => (no_user(params)),
+            None => (login_button(params)),
         }
     }
 }
