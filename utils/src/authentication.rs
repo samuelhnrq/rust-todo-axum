@@ -22,8 +22,8 @@ use openidconnect::{
     RedirectUrl, RefreshToken,
 };
 use std::{
-    cell::RefCell,
     net::{IpAddr, SocketAddr},
+    sync::Mutex,
 };
 
 pub const REDIRECT_PATH: &str = "/auth/redirect";
@@ -101,9 +101,12 @@ async fn exchange_refresh_token(client: &CoreClient, refresh_token: String) -> O
         .ok()
 }
 
-async fn validate_cookie(jar: &RefCell<PrivateCookieJar>, state: &HyperTarot) -> Option<UserData> {
+async fn validate_cookie(
+    jar_m: &mut Mutex<PrivateCookieJar>,
+    state: &HyperTarot,
+) -> Option<UserData> {
     log::debug!("Getting auth cookie");
-    let jwt = get_cookie_value("token", &jar.borrow());
+    let jwt = get_cookie_value("token", jar_m.get_mut().ok()?);
     if jwt.is_empty() {
         return None;
     }
@@ -114,18 +117,16 @@ async fn validate_cookie(jar: &RefCell<PrivateCookieJar>, state: &HyperTarot) ->
             Some(session.claims)
         }
         Err(err) => {
-            log::trace!("Token did not pass validation {:?}", err);
+            log::debug!("Token did not pass validation {:?}", err);
             if *err.kind() == ErrorKind::ExpiredSignature {
-                let refresh_token = get_cookie_value("refresh_token", &jar.borrow());
-                let maybe_refreshed =
-                    exchange_refresh_token(&state.auth_client, refresh_token).await;
-                if let Some(refreshed) = maybe_refreshed {
-                    jar.replace_with(|old_jar| {
-                        old_jar.clone().add(safe_cookie("token", refreshed))
-                    });
-                    let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
-                    return decoded.map(|x| x.claims).ok();
-                }
+                log::debug!("JWT is expired, attempting to refresh");
+                let refresh_token = get_cookie_value("refresh_token", jar_m.get_mut().ok()?);
+                let refreshed = exchange_refresh_token(&state.auth_client, refresh_token).await?;
+                log::debug!("Successfully refreshed, persisting the new token");
+                let jar = jar_m.get_mut().ok()?;
+                *jar = jar.clone().add(safe_cookie("token", refreshed));
+                let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
+                return decoded.map(|x| x.claims).ok();
             }
             None
         }
@@ -137,13 +138,16 @@ pub async fn user_data_extension(
     State(state): State<HyperTarot>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
-    let jar_cell = RefCell::new(jar);
-    // let maybe_user_data = ;
-    if let Some(user_data) = validate_cookie(&jar_cell, &state).await {
+) -> Result<(PrivateCookieJar, Response), Response> {
+    let mut jar_cell = Mutex::new(jar);
+    if let Some(user_data) = validate_cookie(&mut jar_cell, &state).await {
         request.extensions_mut().insert(user_data);
     }
-    Ok(next.run(request).await)
+    if let Ok(final_jar) = jar_cell.into_inner() {
+        Ok((final_jar, next.run(request).await))
+    } else {
+        Err(next.run(request).await)
+    }
 }
 
 fn build_validation() -> Validation {
