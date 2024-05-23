@@ -1,6 +1,4 @@
-use std::net::{IpAddr, SocketAddr};
-
-use crate::{clerk_user, config::LOADED_CONFIG, safe_cookie, state::HyperTarot};
+use crate::{clerk_user, config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 use axum::{
     extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
@@ -12,6 +10,7 @@ use axum_extra::extract::PrivateCookieJar;
 use entity::users;
 use jsonwebtoken::{
     decode,
+    errors::ErrorKind,
     jwk::{Jwk, JwkSet, PublicKeyUse},
     Algorithm, DecodingKey, Validation,
 };
@@ -20,8 +19,14 @@ use openidconnect::{
     reqwest::async_http_client,
     url::Url,
     AuthorizationCode, ClientId, ClientSecret, IssuerUrl, OAuth2TokenResponse, PkceCodeVerifier,
-    RedirectUrl,
+    RedirectUrl, RefreshToken,
 };
+use std::{
+    cell::RefCell,
+    net::{IpAddr, SocketAddr},
+};
+
+pub const REDIRECT_PATH: &str = "/auth/redirect";
 
 #[derive(serde::Serialize)]
 struct UnauthorizedError {
@@ -86,36 +91,59 @@ pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserData
     }
 }
 
-pub async fn user_data_extension(
-    State(state): State<HyperTarot>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    jar: PrivateCookieJar,
-    mut request: Request,
-    next: Next,
-) -> Response {
-    log::debug!("Authenticating {}", addr);
-    log::debug!("Getting auth __sesion cookie");
-    let jwt: String = if let Some(x) = jar.get("__session") {
-        x.value_trimmed().into()
-    } else {
-        log::debug!("Missing __session cookie");
-        return next.run(request).await;
-    };
+/// # Returns
+async fn exchange_refresh_token(client: &CoreClient, refresh_token: String) -> Option<String> {
+    client
+        .exchange_refresh_token(&RefreshToken::new(refresh_token))
+        .request_async(openidconnect::reqwest::async_http_client)
+        .await
+        .map(|z| z.access_token().secret().clone())
+        .ok()
+}
+
+async fn validate_cookie(jar: &RefCell<PrivateCookieJar>, state: &HyperTarot) -> Option<UserData> {
+    log::debug!("Getting auth cookie");
+    let jwt = get_cookie_value("token", &jar.borrow());
+    if jwt.is_empty() {
+        return None;
+    }
     log::debug!("Cookie found, validating");
-    let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
-    match decoded {
+    match decode::<UserData>(&jwt, &state.jwk, &build_validation()) {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");
-            log::debug!("Data is {:?}", session.claims);
-
-            request.extensions_mut().insert(session.claims);
+            Some(session.claims)
         }
         Err(err) => {
-            log::debug!("Token did not pass validation {:?}", err);
-            log::debug!("token was '{}'", jwt);
+            log::trace!("Token did not pass validation {:?}", err);
+            if *err.kind() == ErrorKind::ExpiredSignature {
+                let refresh_token = get_cookie_value("refresh_token", &jar.borrow());
+                let maybe_refreshed =
+                    exchange_refresh_token(&state.auth_client, refresh_token).await;
+                if let Some(refreshed) = maybe_refreshed {
+                    jar.replace_with(|old_jar| {
+                        old_jar.clone().add(safe_cookie("token", refreshed))
+                    });
+                    let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
+                    return decoded.map(|x| x.claims).ok();
+                }
+            }
+            None
         }
     }
-    next.run(request).await
+}
+
+pub async fn user_data_extension(
+    jar: PrivateCookieJar,
+    State(state): State<HyperTarot>,
+    mut request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let jar_cell = RefCell::new(jar);
+    // let maybe_user_data = ;
+    if let Some(user_data) = validate_cookie(&jar_cell, &state).await {
+        request.extensions_mut().insert(user_data);
+    }
+    Ok(next.run(request).await)
 }
 
 fn build_validation() -> Validation {
@@ -132,7 +160,7 @@ pub async fn core_client_factory() -> (CoreClient, CoreProviderMetadata) {
         .await
         .expect("Failed to fetch OpenID metadata");
     let mut url = Url::parse(LOADED_CONFIG.host_name.as_str()).unwrap();
-    url.set_path("/auth/redirect");
+    url.set_path(REDIRECT_PATH);
     let client = CoreClient::from_provider_metadata(
         provider_metadata.clone(),
         ClientId::new(LOADED_CONFIG.oauth_client_id.clone()),
@@ -151,37 +179,42 @@ pub struct AuthRedirectQuery {
 }
 
 #[axum_macros::debug_handler]
-pub async fn handle_redirect(
+pub async fn handle_oauth_redirect(
     State(state): State<HyperTarot>,
     query: Query<AuthRedirectQuery>,
     cookies: PrivateCookieJar,
 ) -> impl IntoResponse {
-    let parts = cookies
-        .get("auth_tokens")
-        .map(|x| x.value().to_string())
-        .unwrap_or_default();
-    let tokens: Vec<&str> = parts.split('#').collect();
-    if tokens.len() != 3 {
-        log::error!("invalid cookie value {}", parts);
-        return (cookies, Redirect::temporary("http://localhost:8080/"));
+    let crsf_token = get_cookie_value("crsf_token", &cookies);
+    let pkce = get_cookie_value("pkce", &cookies);
+    if query.state != crsf_token {
+        log::error!(
+            "CRSF attack?! state {}, stored cookie {}",
+            query.state,
+            crsf_token
+        );
+        return (cookies, Redirect::to(LOADED_CONFIG.host_name.as_str()));
     }
     let response = state
         .auth_client
         .exchange_code(AuthorizationCode::new(query.code.clone()))
-        .set_pkce_verifier(PkceCodeVerifier::new(tokens[1].to_string()))
+        .set_pkce_verifier(PkceCodeVerifier::new(pkce))
         .request_async(openidconnect::reqwest::async_http_client)
         .await;
-    let final_jar = match response {
-        Ok(code) => cookies.add(safe_cookie(
-            "__session",
-            code.access_token().secret().trim_matches('"'),
-        )),
+    let session_jar = match response {
+        Ok(code) => {
+            let jar = cookies.add(safe_cookie("token", code.access_token().secret()));
+            if let Some(refresh_token) = code.refresh_token() {
+                jar.add(safe_cookie("refresh_token", refresh_token.secret()))
+            } else {
+                jar
+            }
+        }
         Err(err) => {
             log::error!("Failed to exchange token {:?}", err);
             cookies
         }
     };
-    (final_jar, Redirect::temporary("http://localhost:8080/"))
+    (session_jar, Redirect::to(LOADED_CONFIG.host_name.as_str()))
 }
 
 /// # Panics

@@ -1,4 +1,7 @@
-use axum_extra::extract::cookie::{Cookie, SameSite};
+use axum_extra::extract::{
+    cookie::{Cookie, SameSite},
+    PrivateCookieJar,
+};
 
 pub mod authentication;
 mod clerk_user;
@@ -17,4 +20,10 @@ where
         .secure(true)
         .path("/")
         .build()
+}
+
+fn get_cookie_value(key: &'static str, jar: &PrivateCookieJar) -> String {
+    jar.get(key)
+        .map(|x| x.value_trimmed().to_string())
+        .unwrap_or_default()
 }

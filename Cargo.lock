@@ -2607,6 +2607,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
  "tracing-log",
@@ -3991,6 +3992,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "tower",
 ]
 
 [[package]]

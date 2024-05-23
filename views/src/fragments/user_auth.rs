@@ -1,13 +1,19 @@
 use std::cell::RefCell;
 
 use axum::{extract::State, http::HeaderMap, Extension};
-use axum_extra::extract::PrivateCookieJar;
+use axum_extra::extract::{
+    cookie::{Cookie, SameSite},
+    PrivateCookieJar,
+};
 use maud::{html, Markup};
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient},
     CsrfToken, Nonce, PkceCodeChallenge, Scope,
 };
-use utils::{authentication::UserData, safe_cookie, state::HyperTarot};
+use utils::{
+    authentication::{UserData, REDIRECT_PATH},
+    state::HyperTarot,
+};
 
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(
@@ -36,6 +42,20 @@ struct AuthParams<'a> {
     oauth_client: &'a CoreClient,
 }
 
+#[must_use]
+pub fn safe_redirect_cookie<'a, K, V>(key: K, val: V) -> Cookie<'a>
+where
+    K: Into<String>,
+    V: Into<String>,
+{
+    Cookie::build((key.into(), val.into()))
+        .http_only(true)
+        .same_site(SameSite::Strict)
+        .secure(true)
+        .path(REDIRECT_PATH)
+        .build()
+}
+
 fn login_button(params: &AuthParams) -> Markup {
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
     let (url, crsf_token, nonce) = params
@@ -50,15 +70,11 @@ fn login_button(params: &AuthParams) -> Markup {
         .set_pkce_challenge(pkce_challenge)
         .url();
     params.jar.replace_with(|old_jar| {
-        old_jar.to_owned().add(safe_cookie(
-            "auth_tokens".to_string(),
-            format!(
-                "{}#{}#{}",
-                crsf_token.secret(),
-                pkce_verifier.secret(),
-                nonce.secret()
-            ),
-        ))
+        old_jar
+            .clone()
+            .add(safe_redirect_cookie("crsf_token", crsf_token.secret()))
+            .add(safe_redirect_cookie("pkce", pkce_verifier.secret()))
+            .add(safe_redirect_cookie("nonce", nonce.secret()))
     });
     html! {
         a href=(url) { "Do login" }
