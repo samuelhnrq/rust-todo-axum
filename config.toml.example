@@ -1,0 +1,7 @@
+HOST_NAME = "http://localhost:8080"
+DATABASE_URL = "postgres://rust_todo:rust_todo@localhost:5433/rust_todo"
+OAUTH_AUTODISCOVER_URL = "http://localhost:8888/realms/master"
+OAUTH_CLIENT_ID = "hyper-tarot"
+OAUTH_CLIENT_SECRET = "pTcLmIRucCYWHV1MFw7Nu88xRLNozeHY"
+WWW_STATIC_FILES = "./views/www"
+COOKIE_SECRET = "change_me_the_cookie_secret_must_be_long"

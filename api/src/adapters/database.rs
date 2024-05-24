@@ -6,7 +6,8 @@ use utils::config::LOADED_CONFIG;
 
 pub async fn connect() -> DatabaseConnection {
     let filter = EnvFilter::from_default_env();
-    let mut connection_opts = ConnectOptions::new(LOADED_CONFIG.database_url.clone());
+    let url = LOADED_CONFIG.database_url.clone();
+    let mut connection_opts = ConnectOptions::new(url.clone());
     connection_opts.sqlx_logging(
         filter
             .max_level_hint()
@@ -16,6 +17,7 @@ pub async fn connect() -> DatabaseConnection {
     log::info!("Attempting to connect to database...");
     let connection = Database::connect(connection_opts)
         .await
+        .inspect_err(|err| log::error!("Failed to connect to {}: {}", url, err))
         .expect("Failed to connect to the database!");
     log::info!("Connection OK, run migrations");
     migration::Migrator::up(&connection, None)

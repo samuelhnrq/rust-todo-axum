@@ -13,10 +13,7 @@ services:
       - db
       - keycloak
     environment:
-      DATABASE_URL: postgres://postgres:assowrd@db/rust-todo
-      OAUTH_ISSUER: https://balanced-elk-76.clerk.accounts.dev
       RUST_LOG: DEBUG
-      PORT: "8080"
     ports:
       - "8080:8080"
     networks:
@@ -49,8 +46,7 @@ services:
       timeout: 2s
       retries: 5
     environment:
-      POSTGRES_DB: rust-todo
-      POSTGRES_PASSWORD: assowrd
+      POSTGRES_PASSWORD: assoword
     volumes:
       - db-data:/var/lib/postgresql/data:rw
       - ./migration/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
