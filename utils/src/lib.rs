@@ -4,12 +4,11 @@ use axum_extra::extract::{
 };
 
 pub mod authentication;
-mod clerk_user;
 pub mod config;
 pub mod state;
 
 #[must_use]
-pub fn safe_cookie<'a, K, V>(key: K, val: V) -> Cookie<'a>
+pub(crate) fn safe_cookie<'a, K, V>(key: K, val: V) -> Cookie<'a>
 where
     K: Into<String>,
     V: Into<String>,
@@ -22,7 +21,7 @@ where
         .build()
 }
 
-fn get_cookie_value(key: &'static str, jar: &PrivateCookieJar) -> String {
+pub(crate) fn get_cookie_value(key: &'static str, jar: &PrivateCookieJar) -> String {
     jar.get(key)
         .map(|x| x.value_trimmed().to_string())
         .unwrap_or_default()

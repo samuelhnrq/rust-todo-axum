@@ -1,4 +1,4 @@
-use crate::{clerk_user, config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
+use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 use axum::{
     extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use axum_extra::extract::PrivateCookieJar;
-use entity::users;
 use jsonwebtoken::{
     decode,
     errors::ErrorKind,
@@ -81,17 +80,16 @@ pub async fn required_login_middleware(
     }
 }
 
-pub async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserData) {
-    let user_resp = clerk_user::fetch_user(&state.requests, &user.sub, jwt).await;
-    if let Ok(user) = user_resp {
-        users::upsert(user.into(), &state.connection)
-            .await
-            .err()
-            .inspect(|err| log::error!("Failed to do stuff {:?}", err));
-    }
-}
+// async fn assert_in_database(state: HyperTarot, jwt: &String, user: &UserData) {
+//     let user_resp = clerk_user::fetch_user(&state.requests, &user.sub, jwt).await;
+//     if let Ok(user) = user_resp {
+//         users::upsert(user.into(), &state.connection)
+//             .await
+//             .err()
+//             .inspect(|err| log::error!("Failed to do stuff {:?}", err));
+//     }
+// }
 
-/// # Returns
 async fn exchange_refresh_token(client: &CoreClient, refresh_token: String) -> Option<String> {
     client
         .exchange_refresh_token(&RefreshToken::new(refresh_token))

@@ -14,7 +14,6 @@ pub struct HyperTarot {
     pub key: Key,
 }
 
-// this impl tells `SignedCookieJar` how to access the key from our state
 impl FromRef<HyperTarot> for Key {
     fn from_ref(state: &HyperTarot) -> Self {
         state.key.clone()
