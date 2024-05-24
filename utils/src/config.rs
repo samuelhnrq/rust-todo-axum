@@ -18,8 +18,8 @@ pub struct Config {
 /// If missing configuration
 pub static LOADED_CONFIG: Lazy<Config> = Lazy::new(|| {
     let config = Configurer::builder()
-        .add_source(Environment::with_prefix("CONFIG"))
         .add_source(File::with_name("config"))
+        .add_source(Environment::with_prefix("HT"))
         .build()
         .expect("Failed loading configuration sources");
     config

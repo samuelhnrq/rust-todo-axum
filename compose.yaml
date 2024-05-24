@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
-      start_interval: 0s
+      # start_interval: 0s
       interval: 2s
       timeout: 2s
       retries: 5
@@ -55,6 +55,6 @@ services:
       - db-data:/var/lib/postgresql/data:rw
       - ./migration/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - main
