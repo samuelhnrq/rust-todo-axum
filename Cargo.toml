@@ -19,7 +19,6 @@ sea-orm = { version = "=1.0.0-rc.4", features = [
     "runtime-tokio-rustls",
     "macros",
 ] }
-openidconnect = "3.5.0"
 jsonwebtoken = { version = "9", default-features = false }
 serde = { version = "1", features = ["derive", "std"] }
 tower = "^0.4.13"

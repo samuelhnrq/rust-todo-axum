@@ -19,7 +19,6 @@ serde_valid = { workspace = true }
 axum = { workspace = true }
 axum-extra = { workspace = true }
 log = { workspace = true }
-openidconnect = { workspace = true }
 serde = { workspace = true }
 axum-macros = { workspace = true }
 

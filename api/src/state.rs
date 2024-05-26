@@ -1,15 +1,19 @@
 use axum_extra::extract::cookie::Key;
 use reqwest::Client;
-use utils::authentication::{core_client_factory, fetch_remote_jwk};
+use utils::authentication::{fetch_remote_jwk, load_openid_config};
 use utils::config::LOADED_CONFIG;
 use utils::state::HyperTarot;
 
 use crate::adapters::database;
 
 pub async fn create() -> HyperTarot {
+    let requests = Client::builder()
+        .connection_verbose(true)
+        .build()
+        .expect("Failed to build reqwest client");
     let connection = database::connect().await;
-    let (auth_client, metadata) = core_client_factory().await;
-    let jwk = fetch_remote_jwk(metadata.jwks_uri().to_string()).await;
+    let oauth_config = load_openid_config(&requests).await;
+    let jwk = fetch_remote_jwk(&requests, &oauth_config).await;
     let cookie_secret = &LOADED_CONFIG.cookie_secret;
     assert!(
         !cookie_secret.is_empty(),
@@ -19,9 +23,9 @@ pub async fn create() -> HyperTarot {
 
     HyperTarot {
         connection,
+        oauth_config,
         jwk,
-        auth_client,
+        requests,
         key,
-        requests: Client::new(),
     }
 }

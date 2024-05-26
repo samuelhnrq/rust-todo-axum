@@ -2,14 +2,14 @@ use std::fs::{self, DirEntry};
 
 use config::{builder::DefaultState, Config as Configurer, ConfigBuilder, Environment, File};
 use once_cell::sync::Lazy;
-use openidconnect::url::Url;
 
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct Config {
-    pub host_name: Url,
+    pub host_name: String,
     pub database_url: String,
-    pub oauth_autodiscover_url: Url,
+    pub oauth_autodiscover_url: String,
     pub oauth_client_id: String,
+    pub oauth_audience: String,
     pub cookie_secret: String,
     pub oauth_client_secret: String,
     #[serde(default)]

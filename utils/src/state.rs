@@ -1,16 +1,17 @@
 use axum::extract::FromRef;
 use axum_extra::extract::cookie::Key;
 use jsonwebtoken::DecodingKey;
-use openidconnect::core::CoreClient;
 use reqwest::Client;
 use sea_orm::DatabaseConnection;
+
+use crate::authentication::models::OpenIdConfiguration;
 
 #[derive(Clone)]
 pub struct HyperTarot {
     pub connection: DatabaseConnection,
+    pub oauth_config: OpenIdConfiguration,
     pub jwk: DecodingKey,
     pub requests: Client,
-    pub auth_client: CoreClient,
     pub key: Key,
 }
 
