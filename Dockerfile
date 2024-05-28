@@ -4,7 +4,7 @@ COPY ./views/www /opt/www
 COPY ./target/release/rust_todo_api /usr/bin
 
 ENV PORT=8080
-ENV WWW_STATIC_FILES=/opt/www
+ENV HT_WWW_STATIC_FILES=/opt/www
 
 EXPOSE 8080
 # Avoiding recieving PID 1
