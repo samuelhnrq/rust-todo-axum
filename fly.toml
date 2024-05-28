@@ -9,14 +9,14 @@ primary_region = "cdg"
 [build]
 
 [[http_service.checks]]
-grace_period = "5s"
-interval = "15s"
+grace_period = "3s"
+interval = "60s"
 method = "GET"
 timeout = "5s"
 path = "/ping"
 
 [env]
-RUST_LOG = "debug"
+RUST_LOG = "TRACE"
 
 [deploy]
 strategy = "canary"
