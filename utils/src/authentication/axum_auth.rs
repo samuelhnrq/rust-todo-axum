@@ -8,6 +8,7 @@ use axum::{
     Json,
 };
 use axum_extra::extract::PrivateCookieJar;
+use either::Either;
 
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 
@@ -32,12 +33,14 @@ pub async fn handle_oauth_redirect(
         );
         return (cookies, Redirect::to(LOADED_CONFIG.host_name.as_str()));
     }
-    let response = exchange_token(&state, from_redirect_to_token_payload(query, pkce)).await;
+    let token_payload = from_redirect_to_token_payload(query, pkce);
+    let response = exchange_token(&state, &Either::Left(token_payload)).await;
     let session_jar = match response {
         Ok(code) => {
-            log::debug!("Exchanged token successfully");
+            log::debug!("Exchanged token successfully, persisting token in cookies");
             let jar = cookies.add(safe_cookie("token", &code.access_token));
             if let Some(refresh_token) = &code.refresh_token {
+                log::debug!("Token has refresh, persisting too");
                 jar.add(safe_cookie("refresh_token", refresh_token))
             } else {
                 jar

@@ -38,7 +38,16 @@ pub struct TokenExchangePayload {
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
-    pub code_verifier: Option<String>,
+    pub code_verifier: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RefreshPayload {
+    pub grant_type: String,
+    pub refresh_token: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub redirect_uri: String,
 }
 
 #[derive(Default, Debug, Clone, Deserialize)]

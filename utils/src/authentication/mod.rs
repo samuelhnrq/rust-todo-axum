@@ -1,15 +1,18 @@
+use std::error::Error;
+
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     PrivateCookieJar,
 };
+use either::{for_both, Either};
 use jsonwebtoken::{
     decode,
     errors::ErrorKind,
     jwk::{Jwk, JwkSet, PublicKeyUse},
     Algorithm, DecodingKey, Validation,
 };
-use reqwest::{Client, Error, Url};
+use reqwest::{header::CONTENT_TYPE, Client, Url};
 
 mod axum_auth;
 pub mod models;
@@ -17,7 +20,7 @@ pub use axum_auth::*;
 
 use self::models::{
     build_redirect_url, AuthRedirectQuery, AuthorizationParams, OpenIdConfiguration,
-    TokenExchangePayload, TokenResponse,
+    RefreshPayload, TokenExchangePayload, TokenResponse,
 };
 
 pub const REDIRECT_PATH: &str = "/auth/redirect";
@@ -41,10 +44,10 @@ where
         .build()
 }
 
-async fn validate_cookie(jar_m: &mut PrivateCookieJar, state: &HyperTarot) -> Option<UserData> {
-    log::debug!("Getting auth cookie");
-    let jwt = get_cookie_value("token", jar_m);
+async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Option<UserData> {
+    let jwt = get_cookie_value("token", jar);
     if jwt.is_empty() {
+        log::debug!("Missing auth cookie");
         return None;
     }
     log::debug!("Cookie found, validating");
@@ -57,14 +60,14 @@ async fn validate_cookie(jar_m: &mut PrivateCookieJar, state: &HyperTarot) -> Op
             log::debug!("Token did not pass validation {:?}", err);
             if *err.kind() == ErrorKind::ExpiredSignature {
                 log::debug!("JWT is expired, attempting to refresh");
-                let refresh_token = get_cookie_value("refresh_token", jar_m);
+                let refresh_token = get_cookie_value("refresh_token", jar);
                 let payload = from_refresh_to_token_payload(refresh_token);
-                let refreshed = exchange_token(state, payload)
+                let refreshed = exchange_token(state, &Either::Right(payload))
                     .await
-                    .inspect_err(|err| log::error!("Failed to refresh token {}", err))
+                    .inspect_err(|err| log::error!("Failed to refresh token: '{:?}'", err))
                     .ok()?;
                 log::debug!("Successfully refreshed, persisting the new token");
-                *jar_m = jar_m
+                *jar = jar
                     .clone()
                     .add(safe_cookie("token", &refreshed.access_token));
                 let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
@@ -125,36 +128,42 @@ fn from_redirect_to_token_payload(value: AuthRedirectQuery, pkce: String) -> Tok
         code: value.code,
         client_id: LOADED_CONFIG.oauth_client_id.clone(),
         client_secret: LOADED_CONFIG.oauth_client_secret.clone(),
-        code_verifier: Some(pkce),
+        code_verifier: pkce,
         grant_type: "authorization_code".to_string(),
         redirect_uri: build_redirect_url(),
     }
 }
 
-fn from_refresh_to_token_payload(token: String) -> TokenExchangePayload {
-    TokenExchangePayload {
-        code: token,
+fn from_refresh_to_token_payload(token: String) -> RefreshPayload {
+    RefreshPayload {
+        refresh_token: token,
         client_id: LOADED_CONFIG.oauth_client_id.clone(),
         client_secret: LOADED_CONFIG.oauth_client_secret.clone(),
-        code_verifier: None,
         grant_type: "refresh_token".to_string(),
         redirect_uri: build_redirect_url(),
     }
 }
 
-pub async fn exchange_token(
+async fn exchange_token(
     state: &HyperTarot,
-    payload: TokenExchangePayload,
-) -> Result<TokenResponse, Error> {
-    state
+    payload: &Either<TokenExchangePayload, RefreshPayload>,
+) -> Result<TokenResponse, Box<dyn Error>> {
+    let client_id = for_both!(payload, x => &x.client_id);
+    let client_secret = for_both!(payload, x => &x.client_secret);
+    let body = for_both!(payload, x => serde_urlencoded::to_string(x)).map_err(Box::new)?;
+    let response = state
         .requests
         .post(&state.oauth_config.token_endpoint)
-        .form(&payload)
-        .basic_auth(&payload.client_id, Some(&payload.client_secret))
+        .body(body)
+        .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+        .basic_auth(client_id, Some(client_secret))
         .send()
-        .await?
-        .json()
         .await
+        .map_err(Box::new)?;
+    let body = response.text().await.map_err(Box::new)?;
+    serde_json::from_str(&body)
+        .inspect_err(|err| log::error!("failed to deserialize '{}', error: {:?}", body, err))
+        .map_err(|err| -> Box<dyn Error> { Box::new(err) })
 }
 
 pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguration) -> String {

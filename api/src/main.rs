@@ -15,7 +15,6 @@ use axum::{
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
-use tracing_subscriber::filter::EnvFilter;
 use utils::authentication::{
     handle_oauth_redirect, required_login_middleware, user_data_extension, REDIRECT_PATH,
 };
@@ -60,14 +59,7 @@ fn build_app(state: HyperTarot) -> Router {
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> Result<(), Box<dyn Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive("INFO".parse().unwrap())
-                .from_env()
-                .expect("Invalid log config"),
-        )
-        .init();
+    tracing_subscriber::fmt().init();
     // build our application with a single route
     log::info!("Initializing, connecting to the database");
     let state = state::create().await;
@@ -100,6 +92,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .await
         .expect("Failed to bind on port 8080");
-    log::info!("End");
+    log::info!("Good bye");
     Ok(())
 }
