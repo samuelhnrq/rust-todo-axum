@@ -16,7 +16,7 @@ timeout = "5s"
 path = "/ping"
 
 [env]
-RUST_LOG = "TRACE"
+RUST_LOG = "INFO,rust_todo_api,utils,migration,entity,views"
 
 [deploy]
 strategy = "canary"

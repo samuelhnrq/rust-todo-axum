@@ -91,7 +91,7 @@ pub async fn load_openid_config(request: &Client) -> OpenIdConfiguration {
     let trimmed = url.strip_suffix('/').unwrap_or(url);
     let issuer_url = Url::parse(&format!("{trimmed}/.well-known/openid-configuration"))
         .expect("Invalid oauth config URL");
-    log::info!("url is {}", issuer_url);
+    log::info!("Fetching oauth config at {}", issuer_url);
     request
         .get(issuer_url)
         .send()

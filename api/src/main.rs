@@ -64,6 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let env_log_config = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy();
+    println!("Initializing logging {env_log_config}");
     tracing_subscriber::fmt()
         .with_env_filter(env_log_config)
         .init();
