@@ -9,7 +9,7 @@ primary_region = "cdg"
 [build]
 
 [[http_service.checks]]
-grace_period = "3s"
+grace_period = "5s"
 interval = "60s"
 method = "GET"
 timeout = "5s"

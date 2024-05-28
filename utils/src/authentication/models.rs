@@ -10,17 +10,17 @@ use super::REDIRECT_PATH;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct OpenIdConfiguration {
-    pub issuer: String,
-    pub jwks_uri: String,
-    pub authorization_endpoint: String,
-    pub backchannel_logout_supported: bool,
-    pub frontchannel_logout_supported: bool,
-    pub grant_types_supported: Vec<String>,
-    pub response_modes_supported: Vec<String>,
-    pub response_types_supported: Vec<String>,
-    pub token_endpoint: String,
-    pub token_endpoint_auth_methods_supported: Vec<String>,
-    pub userinfo_endpoint: String,
+    // pub(crate) issuer: String,
+    pub(crate) jwks_uri: String,
+    pub(crate) authorization_endpoint: String,
+    // pub(crate) backchannel_logout_supported: bool,
+    // pub(crate) frontchannel_logout_supported: bool,
+    // pub(crate) grant_types_supported: Vec<String>,
+    // pub(crate) response_modes_supported: Vec<String>,
+    // pub(crate) response_types_supported: Vec<String>,
+    pub(crate) token_endpoint: String,
+    // pub(crate) token_endpoint_auth_methods_supported: Vec<String>,
+    // pub(crate) userinfo_endpoint: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -32,53 +32,53 @@ pub struct AuthRedirectQuery {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct TokenExchangePayload {
-    pub code: String,
-    pub grant_type: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String,
-    pub code_verifier: String,
+pub(crate) struct TokenExchangePayload {
+    pub(crate) code: String,
+    pub(crate) grant_type: String,
+    pub(crate) client_id: String,
+    pub(crate) client_secret: String,
+    pub(crate) redirect_uri: String,
+    pub(crate) code_verifier: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct RefreshPayload {
-    pub grant_type: String,
-    pub refresh_token: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String,
+pub(crate) struct RefreshPayload {
+    pub(crate) grant_type: String,
+    pub(crate) refresh_token: String,
+    pub(crate) client_id: String,
+    pub(crate) client_secret: String,
+    pub(crate) redirect_uri: String,
 }
 
 #[derive(Default, Debug, Clone, Deserialize)]
-pub struct TokenResponse {
-    pub access_token: String,
-    pub expires_in: i64,
-    pub refresh_expires_in: Option<i64>,
-    pub refresh_token: Option<String>,
-    pub token_type: String,
-    pub id_token: String,
-    pub session_state: String,
-    pub scope: String,
+pub(crate) struct TokenResponse {
+    pub(crate) access_token: String,
+    // pub(crate) expires_in: i64,
+    // pub(crate) refresh_expires_in: Option<i64>,
+    pub(crate) refresh_token: Option<String>,
+    // pub(crate) token_type: String,
+    // pub(crate) id_token: Option<String>,
+    // pub(crate) session_state: String,
+    // pub(crate) scope: String,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
-pub struct AuthorizationParams {
-    pub client_id: String,
-    pub redirect_uri: String,
-    pub state: String,
-    pub response_mode: String,
-    pub response_type: String,
-    pub scope: String,
-    pub nonce: String,
+pub(crate) struct AuthorizationParams {
+    pub(crate) client_id: String,
+    pub(crate) redirect_uri: String,
+    pub(crate) state: String,
+    pub(crate) response_mode: String,
+    pub(crate) response_type: String,
+    pub(crate) scope: String,
+    pub(crate) nonce: String,
     #[serde(skip)]
-    pub code_verifier: String,
-    pub code_challenge: String,
-    pub code_challenge_method: String,
+    pub(crate) code_verifier: String,
+    pub(crate) code_challenge: String,
+    pub(crate) code_challenge_method: String,
 }
 
 #[must_use]
-pub fn build_redirect_url() -> String {
+pub(crate) fn build_redirect_url() -> String {
     Url::parse(&LOADED_CONFIG.host_name)
         .map(|mut x| {
             x.set_path(REDIRECT_PATH);
@@ -94,7 +94,7 @@ fn generate_pkce() -> String {
 
 impl AuthorizationParams {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let pkce_verifier = generate_pkce();
         let mut hasher = Sha256::new();
         hasher.update(&pkce_verifier);
@@ -111,7 +111,7 @@ impl AuthorizationParams {
             state: crsf.to_string(),
             response_mode: "query".to_string(),
             response_type: "code".to_string(),
-            scope: "openid".to_string(),
+            scope: "email profile".to_string(),
             nonce: nonce.to_string(),
             code_verifier: pkce_verifier.to_string(),
             code_challenge: pkce_challenge.to_string(),
