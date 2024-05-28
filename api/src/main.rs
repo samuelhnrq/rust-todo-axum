@@ -18,7 +18,7 @@ use tower_http::trace::TraceLayer;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use utils::authentication::{
-    handle_oauth_redirect, required_login_middleware, user_data_extension, REDIRECT_PATH,
+    handle_oauth_redirect, models::REDIRECT_PATH, required_login_middleware, user_data_extension,
 };
 use utils::state::HyperTarot;
 use views::views_router;

@@ -13,8 +13,9 @@ use either::Either;
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 
 use super::{
-    exchange_token, from_redirect_to_token_payload, models::AuthRedirectQuery, validate_cookie,
-    UserData,
+    exchange_token, from_redirect_to_token_payload,
+    models::{AuthRedirectQuery, UserData},
+    validate_cookie,
 };
 
 #[axum_macros::debug_handler]
@@ -23,6 +24,7 @@ pub async fn handle_oauth_redirect(
     Query(query): Query<AuthRedirectQuery>,
     cookies: PrivateCookieJar,
 ) -> impl IntoResponse {
+    log::info!("Got oauth2 redirect, reading cookies");
     let crsf_token = get_cookie_value("crsf", &cookies);
     let pkce = get_cookie_value("pkce", &cookies);
     if query.state != crsf_token {
@@ -33,6 +35,7 @@ pub async fn handle_oauth_redirect(
         );
         return (cookies, Redirect::to(LOADED_CONFIG.host_name.as_str()));
     }
+    log::info!("cookies pass, converting to token exchage payload");
     let token_payload = from_redirect_to_token_payload(query, pkce);
     let response = exchange_token(&state, &Either::Left(token_payload)).await;
     let session_jar = match response {

@@ -12,6 +12,7 @@ use jsonwebtoken::{
     jwk::{Jwk, JwkSet, PublicKeyUse},
     Algorithm, DecodingKey, Validation,
 };
+use models::{UserData, REDIRECT_PATH};
 use reqwest::{header::CONTENT_TYPE, Client, Url};
 
 mod axum_auth;
@@ -22,13 +23,6 @@ use self::models::{
     build_redirect_url, AuthRedirectQuery, AuthorizationParams, OpenIdConfiguration,
     RefreshPayload, TokenExchangePayload, TokenResponse,
 };
-
-pub const REDIRECT_PATH: &str = "/auth/redirect";
-
-#[derive(serde::Deserialize, Clone, Debug)]
-pub struct UserData {
-    pub sub: String,
-}
 
 #[must_use]
 fn safe_redirect_cookie<'a, K, V>(key: K, val: V) -> Cookie<'a>
@@ -51,6 +45,7 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
         return None;
     }
     log::debug!("Cookie found, validating");
+    log::info!("jwt is {jwt}");
     match decode::<UserData>(&jwt, &state.jwk, &build_validation()) {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");

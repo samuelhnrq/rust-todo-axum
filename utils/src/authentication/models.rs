@@ -6,7 +6,14 @@ use uuid::Uuid;
 
 use crate::config::LOADED_CONFIG;
 
-use super::REDIRECT_PATH;
+pub const REDIRECT_PATH: &str = "/auth/redirect";
+
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct UserData {
+    pub sub: String,
+    pub email: Option<String>,
+    pub nonce: String,
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct OpenIdConfiguration {
@@ -26,8 +33,6 @@ pub struct OpenIdConfiguration {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AuthRedirectQuery {
     pub state: String,
-    pub session_state: String,
-    pub iss: String,
     pub code: String,
 }
 
@@ -102,7 +107,6 @@ impl AuthorizationParams {
         let pkce_challenge = padded_pkce_challenge
             .strip_suffix('=')
             .unwrap_or(&padded_pkce_challenge);
-        log::debug!("PKCE is {} challenge is {}", pkce_verifier, pkce_challenge);
         let crsf = Uuid::new_v4();
         let nonce = Uuid::new_v4();
         AuthorizationParams {

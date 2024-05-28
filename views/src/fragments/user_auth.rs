@@ -2,7 +2,10 @@ use axum::{extract::State, http::HeaderMap, Extension};
 use axum_extra::extract::PrivateCookieJar;
 use maud::{html, Markup};
 use utils::{
-    authentication::{generate_auth_url, models::OpenIdConfiguration, UserData},
+    authentication::{
+        generate_auth_url,
+        models::{OpenIdConfiguration, UserData},
+    },
     state::HyperTarot,
 };
 
