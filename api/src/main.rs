@@ -15,6 +15,8 @@ use axum::{
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::EnvFilter;
 use utils::authentication::{
     handle_oauth_redirect, required_login_middleware, user_data_extension, REDIRECT_PATH,
 };
@@ -59,8 +61,12 @@ fn build_app(state: HyperTarot) -> Router {
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> Result<(), Box<dyn Error>> {
-    tracing_subscriber::fmt().init();
-    // build our application with a single route
+    let env_log_config = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env_lossy();
+    tracing_subscriber::fmt()
+        .with_env_filter(env_log_config)
+        .init();
     log::info!("Initializing, connecting to the database");
     let state = state::create().await;
     let app = build_app(state.clone());
