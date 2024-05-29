@@ -7,7 +7,7 @@ on:
 jobs:
   build-and-deploy-image:
     runs-on: ubuntu-latest
-    name: "Build and deploy"
+    name: "Checks with clippy and rustfmt"
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     steps:
       - uses: actions/checkout@v4
@@ -19,18 +19,4 @@ jobs:
       - name: Lint & Build
         run: |
           cargo fmt -q --check && echo Rust-fmt successful
-          cargo clippy --release --locked -- -D warnings && echo Clippy successful
-          cargo build --release --locked
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          load: true
-          tags: rust-todo:${{github.sha}}
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy -i $IMAGE_NAME
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-          IMAGE_NAME: rust-todo:${{github.sha}}
+          cargo clippy --locked -- -D warnings && echo Clippy successful
