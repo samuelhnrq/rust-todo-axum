@@ -1,4 +1,4 @@
-name: Deploy to Fly
+name: Verify
 # run-name: ${{ github.actor }} is learning GitHub Actions
 on:
   - push
@@ -7,7 +7,7 @@ on:
 jobs:
   build-and-deploy-image:
     runs-on: ubuntu-latest
-    name: "Checks with clippy and rustfmt"
+    name: "Clippy & rustfmt"
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     steps:
       - uses: actions/checkout@v4
