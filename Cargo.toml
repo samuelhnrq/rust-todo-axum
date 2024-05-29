@@ -4,26 +4,28 @@ members = ["api", "migration", "entity", "views", "utils"]
 resolver = "2"
 
 [workspace.dependencies]
-axum = "^0.7.0"
-axum-macros = "^0.4.0"
-log = "0.4.20"
-tracing = "0.1.40"
-tracing-log = "0.2.0"
+axum = "^0.7"
+axum-macros = "^0.4"
+log = "^0.4"
+tracing = "^0.1"
+tracing-log = "^0.2"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-reqwest = { version = "0.12", features = [
+reqwest = { version = "^0.12", features = [
     "json",
     "rustls-tls",
 ], default-features = false }
-sea-orm = { version = "=1.0.0-rc.4", features = [
+sea-orm = { version = "=1.0.0-rc.5", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "macros",
 ] }
-jsonwebtoken = { version = "9", default-features = false }
-serde = { version = "1", features = ["derive", "std"] }
+jsonwebtoken = { version = "^9", default-features = false }
+serde = { version = "^1", features = ["derive", "std"] }
 tower = "^0.4.13"
 serde_valid = "0.19.0"
-axum-extra = { version = "0.9", features = ["cookie", "cookie-private"] }
+axum-extra = { version = "^0.9", features = ["cookie", "cookie-private"] }
+tokio = { version = "^1", features = ["macros", "rt-multi-thread", "signal"] }
+tower-http = { version = "^0.5", features = ["trace", "fs", "set-header"] }
 
 [workspace.package]
 edition = "2021"

@@ -4,7 +4,7 @@ use maud::{html, Markup};
 use utils::{
     authentication::{
         generate_auth_url,
-        models::{OpenIdConfiguration, UserData},
+        models::{Claims, OpenIdConfiguration},
     },
     state::HyperTarot,
 };
@@ -12,7 +12,7 @@ use utils::{
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(
     State(state): State<HyperTarot>,
-    maybe_user: Option<Extension<UserData>>,
+    maybe_user: Option<Extension<Claims>>,
     mut jar: PrivateCookieJar,
 ) -> (PrivateCookieJar, HeaderMap, Markup) {
     let mut params = AuthParams {
@@ -32,7 +32,7 @@ pub async fn fragment_controller(
 struct AuthParams<'a> {
     jar: &'a mut PrivateCookieJar,
     auth_config: &'a OpenIdConfiguration,
-    user: Option<UserData>,
+    user: Option<Claims>,
 }
 
 fn login_button(params: &mut AuthParams) -> Markup {

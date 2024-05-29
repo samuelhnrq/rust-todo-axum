@@ -22,8 +22,8 @@ sea-orm = { workspace = true }
 jsonwebtoken = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-tower-http = { version = "0.5", features = ["trace", "fs", "set-header"] }
+tokio = { workspace = true }
+tower-http = { workspace = true }
 
 [lints]
 workspace = true

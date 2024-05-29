@@ -1,4 +1,5 @@
 use base64ct::{Base64Url, Encoding};
+use entity::users::NewUser;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -9,9 +10,35 @@ use crate::config::LOADED_CONFIG;
 pub const REDIRECT_PATH: &str = "/auth/redirect";
 
 #[derive(serde::Deserialize, Clone, Debug)]
-pub struct UserData {
+pub struct Claims {
     pub sub: String,
     pub email: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UserInfo {
+    pub sub: String,
+    pub name: String,
+    pub given_name: String,
+    pub family_name: String,
+    pub middle_name: String,
+    pub nickname: String,
+    pub preferred_username: String,
+    pub profile: String,
+    pub picture: String,
+    pub email: String,
+    pub gender: String,
+    pub birthdate: String,
+    pub locale: String,
+}
+
+impl From<UserInfo> for NewUser {
+    fn from(value: UserInfo) -> Self {
+        NewUser {
+            email: value.email,
+            name: value.name,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -26,7 +53,7 @@ pub struct OpenIdConfiguration {
     // pub(crate) response_types_supported: Vec<String>,
     pub(crate) token_endpoint: String,
     // pub(crate) token_endpoint_auth_methods_supported: Vec<String>,
-    // pub(crate) userinfo_endpoint: String,
+    pub(crate) userinfo_endpoint: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

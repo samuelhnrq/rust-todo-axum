@@ -13,8 +13,8 @@ use either::Either;
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 
 use super::{
-    exchange_token, from_redirect_to_token_payload,
-    models::{AuthRedirectQuery, UserData},
+    copy_to_db, exchange_token, from_redirect_to_token_payload,
+    models::{AuthRedirectQuery, Claims},
     validate_cookie,
 };
 
@@ -42,6 +42,12 @@ pub async fn handle_oauth_redirect(
         Ok(code) => {
             log::debug!("Exchanged token successfully, persisting token in cookies");
             let jar = cookies.add(safe_cookie("token", &code.access_token));
+            tokio::spawn(async move {
+                copy_to_db(code.access_token.clone(), &state)
+                    .await
+                    .inspect_err(|err| log::error!("Failed to persist JWT into DB {:?}", err))
+                    .ok();
+            });
             if let Some(refresh_token) = &code.refresh_token {
                 log::debug!("Token has refresh, persisting too");
                 jar.add(safe_cookie("refresh_token", refresh_token))
@@ -97,7 +103,7 @@ pub async fn required_login_middleware(
     request: Request,
     next: Next,
 ) -> Response {
-    let user_option = request.extensions().get::<UserData>();
+    let user_option = request.extensions().get::<Claims>();
     if is_safe_requester(addr) || user_option.is_some() {
         next.run(request).await
     } else {

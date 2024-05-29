@@ -6,13 +6,14 @@ use axum_extra::extract::{
     PrivateCookieJar,
 };
 use either::{for_both, Either};
+use entity::users::upsert;
 use jsonwebtoken::{
     decode,
     errors::ErrorKind,
     jwk::{Jwk, JwkSet, PublicKeyUse},
     Algorithm, DecodingKey, Validation,
 };
-use models::{UserData, REDIRECT_PATH};
+use models::{Claims, UserInfo, REDIRECT_PATH};
 use reqwest::{header::CONTENT_TYPE, Client, Url};
 
 mod axum_auth;
@@ -38,7 +39,7 @@ where
         .build()
 }
 
-async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Option<UserData> {
+async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Option<Claims> {
     let jwt = get_cookie_value("token", jar);
     if jwt.is_empty() {
         log::debug!("Missing auth cookie");
@@ -46,7 +47,7 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
     }
     log::debug!("Cookie found, validating");
     log::info!("jwt is {jwt}");
-    match decode::<UserData>(&jwt, &state.jwk, &build_validation()) {
+    match decode::<Claims>(&jwt, &state.jwk, &build_validation()) {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");
             Some(session.claims)
@@ -65,12 +66,26 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
                 *jar = jar
                     .clone()
                     .add(safe_cookie("token", &refreshed.access_token));
-                let decoded = decode::<UserData>(&jwt, &state.jwk, &build_validation());
+                let decoded = decode::<Claims>(&jwt, &state.jwk, &build_validation());
                 return decoded.map(|x| x.claims).ok();
             }
             None
         }
     }
+}
+
+async fn copy_to_db(jwt: String, state: &HyperTarot) -> Result<(), Box<dyn Error>> {
+    log::info!("Fetching new JWT user data to add to database");
+    let resp = state
+        .requests
+        .get(&state.oauth_config.userinfo_endpoint)
+        .bearer_auth(&jwt)
+        .send()
+        .await?
+        .json::<UserInfo>()
+        .await?;
+    upsert(resp.into(), &state.connection).await?;
+    Ok(())
 }
 
 fn build_validation() -> Validation {
