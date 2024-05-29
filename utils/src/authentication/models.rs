@@ -12,7 +12,6 @@ pub const REDIRECT_PATH: &str = "/auth/redirect";
 pub struct UserData {
     pub sub: String,
     pub email: Option<String>,
-    pub nonce: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -72,10 +71,10 @@ pub(crate) struct AuthorizationParams {
     pub(crate) client_id: String,
     pub(crate) redirect_uri: String,
     pub(crate) state: String,
+    pub(crate) audience: String,
     pub(crate) response_mode: String,
     pub(crate) response_type: String,
     pub(crate) scope: String,
-    pub(crate) nonce: String,
     #[serde(skip)]
     pub(crate) code_verifier: String,
     pub(crate) code_challenge: String,
@@ -108,15 +107,14 @@ impl AuthorizationParams {
             .strip_suffix('=')
             .unwrap_or(&padded_pkce_challenge);
         let crsf = Uuid::new_v4();
-        let nonce = Uuid::new_v4();
         AuthorizationParams {
             client_id: LOADED_CONFIG.oauth_client_id.clone(),
             redirect_uri: build_redirect_url(),
             state: crsf.to_string(),
             response_mode: "query".to_string(),
+            audience: "hyper-tarot".to_string(),
             response_type: "code".to_string(),
-            scope: "email profile".to_string(),
-            nonce: nonce.to_string(),
+            scope: "offline_access openid email profile".to_string(),
             code_verifier: pkce_verifier.to_string(),
             code_challenge: pkce_challenge.to_string(),
             code_challenge_method: "S256".to_string(),

@@ -166,7 +166,6 @@ pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguratio
     *jar = jar
         .clone()
         .add(safe_redirect_cookie("pkce", &params.code_verifier))
-        .add(safe_redirect_cookie("nonce", &params.nonce))
         .add(safe_redirect_cookie("crsf", &params.state));
     Url::parse(&config.authorization_endpoint)
         .map(|mut x| {
