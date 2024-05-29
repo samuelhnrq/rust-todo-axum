@@ -32,7 +32,7 @@ where
 {
     Cookie::build((key.into(), val.into()))
         .http_only(true)
-        .same_site(SameSite::Strict)
+        .same_site(SameSite::Lax)
         .secure(true)
         .path(REDIRECT_PATH)
         .build()
