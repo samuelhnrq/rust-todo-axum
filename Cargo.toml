@@ -1,6 +1,6 @@
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [workspace]
-members = ["api", "migration", "entity", "views", "utils"]
+members = ["api", "entity", "views", "utils"]
 resolver = "2"
 
 [workspace.dependencies]

@@ -1,4 +1,3 @@
-use migration::MigratorTrait;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
@@ -19,10 +18,6 @@ pub async fn connect() -> DatabaseConnection {
         .await
         .inspect_err(|err| log::error!("Failed to connect to {}: {}", url, err))
         .expect("Failed to connect to the database!");
-    log::info!("Connection OK, run migrations");
-    migration::Migrator::up(&connection, None)
-        .await
-        .expect("Failed to execute migrations");
-    log::info!("Migrations OK");
+    log::info!("Connection OK,");
     connection
 }

@@ -46,7 +46,6 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
         return None;
     }
     log::debug!("Cookie found, validating");
-    log::info!("jwt is {jwt}");
     match decode::<Claims>(&jwt, &state.jwk, &build_validation()) {
         Ok(session) => {
             log::debug!("Validated successfully adding extension to request");

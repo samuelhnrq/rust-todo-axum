@@ -21,15 +21,11 @@ pub struct UserInfo {
     pub name: String,
     pub given_name: String,
     pub family_name: String,
-    pub middle_name: String,
-    pub nickname: String,
     pub preferred_username: String,
-    pub profile: String,
-    pub picture: String,
+    pub picture: Option<String>,
     pub email: String,
-    pub gender: String,
-    pub birthdate: String,
-    pub locale: String,
+    pub birthdate: Option<String>,
+    pub locale: Option<String>,
 }
 
 impl From<UserInfo> for NewUser {

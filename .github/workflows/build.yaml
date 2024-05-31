@@ -21,6 +21,12 @@ jobs:
           cargo fmt -q --check && echo Rust-fmt successful
           cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
+      - name: Install Atlas
+        run: curl -sSf https://atlasgo.sh | sh
+      - name: Install Atlas
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: atlas migrate apply -u "$DATABASE_URL" --revisions-schema public
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -28,7 +34,7 @@ jobs:
           load: true
           tags: rust-todo:${{github.sha}}
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy -i $IMAGE_NAME
         env:
