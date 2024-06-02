@@ -57,4 +57,15 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="2" author="Samuel">
+        <renameTable oldTableName="task" newTableName="tasks" />
+        <addColumn tableName="users">
+            <column name="oauth_sub" type="varchar">
+                <constraints nullable="false" unique="true" />
+            </column>
+        </addColumn>
+        <update tableName="users">
+            <column name="oauth_sub" valueComputed="id"></column>
+        </update>
+    </changeSet>
 </databaseChangeLog>
