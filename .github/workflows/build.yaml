@@ -21,12 +21,12 @@ jobs:
           cargo fmt -q --check && echo Rust-fmt successful
           cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
-      - name: Install Atlas
-        run: curl -sSf https://atlasgo.sh | sh
-      - name: Install Atlas
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: atlas migrate apply -u "$DATABASE_URL" --revisions-schema public
+      - uses: liquibase-github-actions/update@v4.28.0
+        with:
+          changelogFile: liquibase-changelog.xml
+          url:  "jdbc:${{ secrets.DATABASE_URL }}"
+          username: ${{ secrets.LIQUIBASE_COMMAND_USERNAME }}
+          password: ${{ secrets.LIQUIBASE_COMMAND_PASSWORD }}
       - name: Build and push
         uses: docker/build-push-action@v5
         with:

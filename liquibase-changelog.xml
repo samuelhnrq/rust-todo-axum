@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+                        http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd">
+
+    <changeSet id="0" author="Samuel">
+        <sql dbms="postgresql">CREATE EXTENSION IF NOT EXISTS "uuid-ossp";</sql>
+        <rollback>DROP EXTENSION "uuid-ossp";</rollback>
+    </changeSet>
+
+    <changeSet id="1" author="Samuel">
+        <createTable tableName="users">
+            <column name="id" type="uuid" defaultValueComputed="uuid_generate_v1mc()">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" />
+            </column>
+            <column name="email" type="varchar">
+                <constraints nullable="false" unique="true" />
+            </column>
+            <column name="createdAt" type="timestamp" defaultValueComputed="now()">
+                <constraints nullable="false" />
+            </column>
+            <column name="updatedAt" type="timestamp" defaultValueComputed="now()">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <createTable tableName="task">
+            <column name="id" type="uuid" defaultValueComputed="uuid_generate_v1mc()">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false" />
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="false" />
+            </column>
+            <column name="done" type="boolean" defaultValue="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="owner_id" type="uuid">
+                <constraints nullable="false" referencedTableName="users" referencedColumnNames="id"
+                    foreignKeyName="owner_fk" deleteCascade="true" />
+            </column>
+            <column name="createdAt" type="timestamp" defaultValueComputed="now()">
+                <constraints nullable="false" />
+            </column>
+            <column name="updatedAt" type="timestamp" defaultValueComputed="now()">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

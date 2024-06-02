@@ -1,6 +1,6 @@
 use super::error::build_error_fragment;
 use axum::extract::State;
-use entity::{tasks::list_all, Task};
+use entity::{generated::task, tasks::list_all};
 use maud::{html, Markup};
 use utils::state::HyperTarot;
 
@@ -14,7 +14,7 @@ pub async fn fragment_controller(State(state): State<HyperTarot>) -> Markup {
     list_tasks(tasks)
 }
 
-pub fn list_tasks(tasks: Vec<Task>) -> Markup {
+pub fn list_tasks(tasks: Vec<task::Model>) -> Markup {
     html! {
         table .table {
             thead {

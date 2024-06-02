@@ -1,12 +1,15 @@
 use axum::Form;
 use axum::{extract::State, http::StatusCode, Json};
-use entity::tasks::{list_all, new_task, NewTask, Task};
+use entity::{
+    generated::task,
+    tasks::{list_all, new_task, NewTask},
+};
 use utils::state::HyperTarot;
 
 #[axum_macros::debug_handler]
 pub async fn get_all(
     State(state): State<HyperTarot>,
-) -> Result<Json<Vec<Task>>, (StatusCode, &'static str)> {
+) -> Result<Json<Vec<task::Model>>, (StatusCode, &'static str)> {
     let tasks = list_all(&state.connection, None, None)
         .await
         .map_err(|err| {
@@ -20,7 +23,7 @@ pub async fn get_all(
 pub async fn create(
     State(state): State<HyperTarot>,
     Form(body): Form<NewTask>,
-) -> Result<Json<Task>, (StatusCode, &'static str)> {
+) -> Result<Json<task::Model>, (StatusCode, &'static str)> {
     let new_task = new_task(body, &state.connection).await.map_err(|err| {
         log::error!("Failed to create task! err:\n{}", err);
         (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create")
