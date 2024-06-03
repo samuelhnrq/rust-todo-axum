@@ -33,6 +33,7 @@ impl From<UserInfo> for NewUser {
         NewUser {
             email: value.email,
             name: value.name,
+            oauth_sub: value.sub,
         }
     }
 }

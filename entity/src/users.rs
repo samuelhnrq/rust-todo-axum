@@ -6,6 +6,7 @@ use sea_orm::{
 #[derive(serde::Deserialize)]
 pub struct NewUser {
     pub name: String,
+    pub oauth_sub: String,
     pub email: String,
 }
 
@@ -24,6 +25,7 @@ pub async fn new_user(user: NewUser, db: &DatabaseConnection) -> Result<users::M
     let entity = users::ActiveModel {
         name: ActiveValue::Set(user.name),
         email: ActiveValue::Set(user.email),
+        oauth_sub: ActiveValue::Set(user.oauth_sub),
         ..Default::default()
     };
     Users::insert(entity).exec_with_returning(db).await
@@ -34,12 +36,13 @@ pub async fn upsert(user: NewUser, db: &DatabaseConnection) -> Result<users::Mod
         id: ActiveValue::NotSet,
         name: ActiveValue::Set(user.name),
         email: ActiveValue::Set(user.email),
+        oauth_sub: ActiveValue::Set(user.oauth_sub),
         ..Default::default()
     };
     Users::insert(entity)
         .on_conflict(
             OnConflict::column(users::Column::Email)
-                .update_columns([users::Column::Name])
+                .update_columns([users::Column::Name, users::Column::OauthSub])
                 .to_owned(),
         )
         .exec_with_returning(db)

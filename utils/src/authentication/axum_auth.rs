@@ -42,12 +42,11 @@ pub async fn handle_oauth_redirect(
         Ok(code) => {
             log::debug!("Exchanged token successfully, persisting token in cookies");
             let jar = cookies.add(safe_cookie("token", &code.access_token));
-            tokio::spawn(async move {
-                copy_to_db(code.access_token.clone(), &state)
-                    .await
-                    .inspect_err(|err| log::error!("Failed to persist JWT into DB {:?}", err))
-                    .ok();
-            });
+            copy_to_db(code.access_token.clone(), &state)
+                .await
+                .inspect_err(|err| log::error!("Failed to persist JWT into DB {:?}", err))
+                .inspect(|user| log::info!("Successfully copied {} to database", user.name))
+                .ok();
             if let Some(refresh_token) = &code.refresh_token {
                 log::debug!("Token has refresh, persisting too");
                 jar.add(safe_cookie("refresh_token", refresh_token))

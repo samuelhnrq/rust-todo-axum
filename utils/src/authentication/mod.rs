@@ -6,7 +6,7 @@ use axum_extra::extract::{
     PrivateCookieJar,
 };
 use either::{for_both, Either};
-use entity::users::upsert;
+use entity::{generated::users, users::upsert};
 use jsonwebtoken::{
     decode,
     errors::ErrorKind,
@@ -73,7 +73,10 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
     }
 }
 
-async fn copy_to_db(jwt: String, state: &HyperTarot) -> Result<(), Box<dyn Error>> {
+async fn copy_to_db(
+    jwt: String,
+    state: &HyperTarot,
+) -> Result<users::Model, Box<dyn Error + Send + Sync>> {
     log::info!("Fetching new JWT user data to add to database");
     let resp = state
         .requests
@@ -83,8 +86,7 @@ async fn copy_to_db(jwt: String, state: &HyperTarot) -> Result<(), Box<dyn Error
         .await?
         .json::<UserInfo>()
         .await?;
-    upsert(resp.into(), &state.connection).await?;
-    Ok(())
+    Ok(upsert(resp.into(), &state.connection).await?)
 }
 
 fn build_validation() -> Validation {
@@ -156,7 +158,7 @@ fn from_refresh_to_token_payload(token: String) -> RefreshPayload {
 async fn exchange_token(
     state: &HyperTarot,
     payload: &Either<TokenExchangePayload, RefreshPayload>,
-) -> Result<TokenResponse, Box<dyn Error>> {
+) -> Result<TokenResponse, Box<dyn Error + Send + Sync>> {
     let client_id = for_both!(payload, x => &x.client_id);
     let client_secret = for_both!(payload, x => &x.client_secret);
     let body = for_both!(payload, x => serde_urlencoded::to_string(x)).map_err(Box::new)?;
@@ -170,9 +172,9 @@ async fn exchange_token(
         .await
         .map_err(Box::new)?;
     let body = response.text().await.map_err(Box::new)?;
-    serde_json::from_str(&body)
+    serde_json::from_str(&body.clone())
         .inspect_err(|err| log::error!("failed to deserialize '{}', error: {:?}", body, err))
-        .map_err(|err| -> Box<dyn Error> { Box::new(err) })
+        .map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })
 }
 
 pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguration) -> String {
