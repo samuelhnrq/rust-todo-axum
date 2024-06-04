@@ -1,6 +1,7 @@
 use crate::generated::{prelude::Users, users};
 use sea_orm::{
-    sea_query::OnConflict, ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
+    sea_query::OnConflict, ActiveValue, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    PaginatorTrait, QueryFilter,
 };
 
 #[derive(serde::Deserialize)]
@@ -19,6 +20,16 @@ pub async fn list_all(
         .paginate(db, u64::from(page_size.unwrap_or(50)))
         .fetch_page(u64::from(num_page.unwrap_or(0)))
         .await
+}
+
+pub async fn find_by_sub(db: &DatabaseConnection, sub: &String) -> Option<users::Model> {
+    Users::find()
+        .filter(users::Column::OauthSub.eq(sub))
+        .one(db)
+        .await
+        .inspect_err(|err| log::info!("Failed to query user from DB {:?}", err))
+        .ok()
+        .flatten()
 }
 
 pub async fn new_user(user: NewUser, db: &DatabaseConnection) -> Result<users::Model, DbErr> {

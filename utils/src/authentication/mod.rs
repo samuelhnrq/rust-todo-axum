@@ -73,7 +73,7 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
     }
 }
 
-async fn copy_to_db(
+async fn user_info_to_db(
     jwt: String,
     state: &HyperTarot,
 ) -> Result<users::Model, Box<dyn Error + Send + Sync>> {

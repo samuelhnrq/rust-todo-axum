@@ -9,13 +9,14 @@ use axum::{
 };
 use axum_extra::extract::PrivateCookieJar;
 use either::Either;
+use entity::users::find_by_sub;
 
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 
 use super::{
-    copy_to_db, exchange_token, from_redirect_to_token_payload,
+    exchange_token, from_redirect_to_token_payload,
     models::{AuthRedirectQuery, Claims},
-    validate_cookie,
+    user_info_to_db, validate_cookie,
 };
 
 #[axum_macros::debug_handler]
@@ -42,7 +43,7 @@ pub async fn handle_oauth_redirect(
         Ok(code) => {
             log::debug!("Exchanged token successfully, persisting token in cookies");
             let jar = cookies.add(safe_cookie("token", &code.access_token));
-            copy_to_db(code.access_token.clone(), &state)
+            user_info_to_db(code.access_token.clone(), &state)
                 .await
                 .inspect_err(|err| log::error!("Failed to persist JWT into DB {:?}", err))
                 .inspect(|user| log::info!("Successfully copied {} to database", user.name))
@@ -117,7 +118,13 @@ pub async fn user_data_extension(
     next: Next,
 ) -> (PrivateCookieJar, Response) {
     if let Some(user_data) = validate_cookie(&mut jar, &state).await {
-        request.extensions_mut().insert(user_data);
+        let db_conn = &state.connection;
+        if let Some(user) = find_by_sub(db_conn, &user_data.sub).await {
+            request.extensions_mut().insert(user);
+            request.extensions_mut().insert(user_data);
+        } else {
+            log::error!("JWT valid bug sub not found in database, not trusting cookie");
+        }
     }
     (jar, next.run(request).await)
 }
