@@ -13,8 +13,8 @@ mod pages;
 
 pub fn views_router() -> Router<HyperTarot> {
     let fragments_router = Router::new()
-        .route("/task", get(list_tasks_controller))
-        .route("/task", post(new_tasks_controller))
+        .route("/tasks", get(list_tasks_controller))
+        .route("/tasks", post(new_tasks_controller))
         .route("/login", get(user_fragment_controller));
     Router::new()
         .route("/", get(homepage))

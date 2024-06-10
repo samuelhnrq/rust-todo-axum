@@ -1,6 +1,5 @@
-use std::error::Error;
-
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
+use axum::BoxError;
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     PrivateCookieJar,
@@ -47,10 +46,7 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
     }
     log::debug!("Cookie found, validating");
     match decode::<Claims>(&jwt, &state.jwk, &build_validation()) {
-        Ok(session) => {
-            log::debug!("Validated successfully adding extension to request");
-            Some(session.claims)
-        }
+        Ok(session) => Some(session.claims),
         Err(err) => {
             log::debug!("Token did not pass validation {:?}", err);
             if *err.kind() == ErrorKind::ExpiredSignature {
@@ -67,16 +63,15 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
                     .add(safe_cookie("token", &refreshed.access_token));
                 let decoded = decode::<Claims>(&jwt, &state.jwk, &build_validation());
                 return decoded.map(|x| x.claims).ok();
+            } else if *err.kind() == ErrorKind::InvalidAudience {
+                log::debug!("Invalid audience JWT: {jwt}");
             }
             None
         }
     }
 }
 
-async fn user_info_to_db(
-    jwt: String,
-    state: &HyperTarot,
-) -> Result<users::Model, Box<dyn Error + Send + Sync>> {
+async fn user_info_to_db(jwt: String, state: &HyperTarot) -> Result<users::Model, BoxError> {
     log::info!("Fetching new JWT user data to add to database");
     let resp = state
         .requests
@@ -91,7 +86,7 @@ async fn user_info_to_db(
 
 fn build_validation() -> Validation {
     let mut val = Validation::new(Algorithm::RS256);
-    val.set_audience(&[&LOADED_CONFIG.oauth_audience]);
+    val.validate_aud = false;
     val
 }
 
@@ -158,7 +153,7 @@ fn from_refresh_to_token_payload(token: String) -> RefreshPayload {
 async fn exchange_token(
     state: &HyperTarot,
     payload: &Either<TokenExchangePayload, RefreshPayload>,
-) -> Result<TokenResponse, Box<dyn Error + Send + Sync>> {
+) -> Result<TokenResponse, BoxError> {
     let client_id = for_both!(payload, x => &x.client_id);
     let client_secret = for_both!(payload, x => &x.client_secret);
     let body = for_both!(payload, x => serde_urlencoded::to_string(x)).map_err(Box::new)?;
@@ -174,7 +169,7 @@ async fn exchange_token(
     let body = response.text().await.map_err(Box::new)?;
     serde_json::from_str(&body.clone())
         .inspect_err(|err| log::error!("failed to deserialize '{}', error: {:?}", body, err))
-        .map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })
+        .map_err(|err| -> BoxError { Box::new(err) })
 }
 
 pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguration) -> String {

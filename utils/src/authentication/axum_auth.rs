@@ -122,6 +122,7 @@ pub async fn user_data_extension(
         if let Some(user) = find_by_sub(db_conn, &user_data.sub).await {
             request.extensions_mut().insert(user);
             request.extensions_mut().insert(user_data);
+            log::info!("Inserted extensions successfully");
         } else {
             log::error!("JWT valid bug sub not found in database, not trusting cookie");
         }

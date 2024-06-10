@@ -21,6 +21,7 @@ axum-extra = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 axum-macros = { workspace = true }
+uuid = { workspace = true }
 
 [lints]
 workspace = true

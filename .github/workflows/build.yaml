@@ -23,8 +23,8 @@ jobs:
           cargo build --release --locked
       - uses: liquibase-github-actions/update@v4.28.0
         with:
-          changelogFile: liquibase-changelog.xml
-          url:  "jdbc:${{ secrets.DATABASE_URL }}"
+          changelogFile: migration/liquibase-changelog.xml
+          url: "jdbc:${{ secrets.DATABASE_URL }}"
           username: ${{ secrets.LIQUIBASE_COMMAND_USERNAME }}
           password: ${{ secrets.LIQUIBASE_COMMAND_PASSWORD }}
       - name: Build and push

@@ -1,11 +1,8 @@
 use crate::generated::{prelude::Tasks, tasks};
 use sea_orm::{prelude::Uuid, ActiveValue, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait};
-use serde_valid::Validate;
 
-#[derive(serde::Deserialize, Default, Validate, Debug, Clone)]
-#[serde(default)]
+#[derive(Debug, Clone)]
 pub struct NewTask {
-    #[validate(min_length = 1)]
     pub title: String,
     pub owner: Uuid,
     pub description: Option<String>,

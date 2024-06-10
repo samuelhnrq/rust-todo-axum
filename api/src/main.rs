@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::net::SocketAddr;
 
 use crate::adapters::{
@@ -10,7 +9,7 @@ use axum::{
     http::StatusCode,
     middleware,
     routing::{get, post},
-    Router,
+    BoxError, Router,
 };
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
@@ -38,7 +37,7 @@ async fn ping(State(state): State<HyperTarot>) -> (StatusCode, &'static str) {
 fn build_app(state: HyperTarot) -> Router {
     let private_router = Router::new()
         .route("/tasks", get(tasks::get_all))
-        .route("/tasks", post(tasks::create))
+        // .route("/tasks", post(tasks::create))
         .route("/users", get(users::get_all))
         .route("/users", post(users::create))
         .layer(middleware::from_fn_with_state(
@@ -60,7 +59,7 @@ fn build_app(state: HyperTarot) -> Router {
 }
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), BoxError> {
     let env_log_config = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy();
