@@ -3,16 +3,16 @@ name: Deploy to Fly
 on:
   - push
 
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}:${{ github.sha }}
+
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
-  build-and-deploy-image:
+  build-rust:
     runs-on: ubuntu-latest
-    name: "Build and deploy"
+    name: "🔨 Rust Build and Lint"
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
@@ -21,22 +21,45 @@ jobs:
           cargo fmt -q --check && echo Rust-fmt successful
           cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
+  build-docker:
+    needs: build-rust
+    runs-on: ubuntu-latest
+    name: "🐳 Build Container"
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  migrate-db:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    name: "↗️ Migrate DB"
+    steps:
       - uses: liquibase-github-actions/update@v4.28.0
         with:
           changelogFile: migration/liquibase-changelog.xml
           url: "jdbc:${{ secrets.DATABASE_URL }}"
           username: ${{ secrets.LIQUIBASE_COMMAND_USERNAME }}
           password: ${{ secrets.LIQUIBASE_COMMAND_PASSWORD }}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          load: true
-          tags: rust-todo:${{github.sha}}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+  deploy:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    name: "🚀 Deploy to fly"
+    steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy -i $IMAGE_NAME
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-          IMAGE_NAME: rust-todo:${{github.sha}}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
