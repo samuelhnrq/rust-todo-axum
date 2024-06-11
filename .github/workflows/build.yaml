@@ -1,4 +1,4 @@
-name: Deploy to Fly
+name: Build & Deploy to Fly
 # run-name: ${{ github.actor }} is learning GitHub Actions
 on:
   - push
@@ -13,14 +13,21 @@ jobs:
     name: "🔨 Rust Build and Lint"
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     steps:
+      - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
+          cache-on-failure: true
       - name: Lint & Build
         run: |
           cargo fmt -q --check && echo Rust-fmt successful
           cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-binary
+          path: target/release/rust_todo_api
+          if-no-files-found: error
   build-docker:
     needs: build-rust
     runs-on: ubuntu-latest
@@ -32,8 +39,18 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rust-binary
+          path: target/release
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -47,19 +64,36 @@ jobs:
     runs-on: ubuntu-latest
     name: "↗️ Migrate DB"
     steps:
-      - uses: liquibase-github-actions/update@v4.28.0
-        with:
-          changelogFile: migration/liquibase-changelog.xml
-          url: "jdbc:${{ secrets.DATABASE_URL }}"
-          username: ${{ secrets.LIQUIBASE_COMMAND_USERNAME }}
-          password: ${{ secrets.LIQUIBASE_COMMAND_PASSWORD }}
+      - uses: actions/checkout@v4
+      - name: Liquibase update
+        env:
+          LIQUIBASE_COMMAND_URL: "jdbc:${{ secrets.DATABASE_URL }}"
+          LIQUIBASE_COMMAND_USERNAME: ${{ secrets.LIQUIBASE_COMMAND_USERNAME }}
+          LIQUIBASE_COMMAND_PASSWORD: ${{ secrets.LIQUIBASE_COMMAND_PASSWORD }}
+        run: |
+          set -v
+          curl -fLO https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.tar.gz
+          tar -xf liquibase-4.28.0.tar.gz liquibase internal
+          ./liquibase update
   deploy:
     needs: build-docker
     runs-on: ubuntu-latest
     name: "🚀 Deploy to fly"
+    permissions:
+      packages: read
+      contents: read
     steps:
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy -i $IMAGE_NAME
+      - uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup fly
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Fly Deploy
+        run: flyctl deploy -i $IMAGE_NAME
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
