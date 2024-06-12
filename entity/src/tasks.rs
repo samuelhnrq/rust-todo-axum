@@ -19,6 +19,15 @@ pub async fn list_all(
         .await
 }
 
+pub async fn delete_task(task_id: Uuid, db: &DatabaseConnection) -> Option<bool> {
+    Tasks::delete_by_id(task_id)
+        .exec(db)
+        .await
+        .inspect_err(|err| log::error!("failed to delete task {:?}", err))
+        .map(|res| res.rows_affected == 1)
+        .ok()
+}
+
 pub async fn new_task(tasks: NewTask, db: &DatabaseConnection) -> Result<tasks::Model, DbErr> {
     let mut entity = tasks::ActiveModel {
         title: ActiveValue::Set(tasks.title),

@@ -1,5 +1,5 @@
 mod error;
-mod list_tasks;
+pub(crate) mod list_tasks;
 mod new_task;
 mod user_auth;
 
