@@ -1,18 +1,16 @@
 use axum::{extract::State, http::HeaderMap, Extension};
 use axum_extra::extract::PrivateCookieJar;
+use entity::generated::users;
 use maud::{html, Markup};
 use utils::{
-    authentication::{
-        generate_auth_url,
-        models::{Claims, OpenIdConfiguration},
-    },
+    authentication::{generate_auth_url, models::OpenIdConfiguration},
     state::HyperTarot,
 };
 
 #[axum_macros::debug_handler]
 pub async fn fragment_controller(
     State(state): State<HyperTarot>,
-    maybe_user: Option<Extension<Claims>>,
+    maybe_user: Option<Extension<users::Model>>,
     mut jar: PrivateCookieJar,
 ) -> (PrivateCookieJar, HeaderMap, Markup) {
     let mut params = AuthParams {
@@ -24,7 +22,7 @@ pub async fn fragment_controller(
     let mut headers = HeaderMap::new();
     headers.insert(
         "Cache-Control",
-        "max-age=5,must-revalidate,private".parse().unwrap(),
+        "max-age=1,must-revalidate,private".parse().unwrap(),
     );
     (jar, headers, html_result)
 }
@@ -32,7 +30,7 @@ pub async fn fragment_controller(
 struct AuthParams<'a> {
     jar: &'a mut PrivateCookieJar,
     auth_config: &'a OpenIdConfiguration,
-    user: Option<Claims>,
+    user: Option<users::Model>,
 }
 
 fn login_button(params: &mut AuthParams) -> Markup {
@@ -45,7 +43,7 @@ fn login_button(params: &mut AuthParams) -> Markup {
 fn user_auth(params: &mut AuthParams) -> Markup {
     html! {
         @match params.user.as_ref() {
-            Some(user) => div { "got user " (user.sub) } ,
+            Some(user) => div { "Welcome " (user.name) } ,
             None => (login_button(params)),
         }
     }

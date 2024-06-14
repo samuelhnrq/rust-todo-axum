@@ -19,8 +19,8 @@ pub struct Claims {
 pub struct UserInfo {
     pub sub: String,
     pub name: String,
-    pub given_name: String,
-    pub family_name: String,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
     pub preferred_username: String,
     pub picture: Option<String>,
     pub email: String,

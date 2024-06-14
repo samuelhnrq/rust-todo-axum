@@ -55,7 +55,7 @@ pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
                                 hx-target="#all-tasks" .btn .btn-light .btn-sm {
                                 "🗑️"
                             }
-                            button hx-get="/fragments/tasks" hx-target="#test" name="task_id" value=(tasks.id)
+                            button hx-post="/fragments/tasks" hx-target="#new-result" name="edit_target" value=(tasks.id)
                                 .btn .btn-light .btn-sm {
                                 "✏️"
                             }
