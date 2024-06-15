@@ -19,9 +19,10 @@ pub(crate) fn scaffolding(title: &'static str, children: &Markup) -> Markup {
                     defer
                     src="/public/bootstrap.min.js" {}
                 script defer src="/public/htmx.min.js" {}
+                script defer src="/public/idiomorph-ext.min.js" {}
                 script defer src="/public/_hyperscript.min.js" {}
             }
-            body {
+            body hx-ext="morph" hx-boost="true" {
                 banner {
                     (navbar()) // pass user here
                 }

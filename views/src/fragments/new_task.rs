@@ -141,7 +141,8 @@ pub async fn new_task(
                     "Edit Task"
                 }
             }
-            form _="on submit send click to #refresh-tasks" hx-post="/fragments/tasks" hx-target="#new-result" .my-3 {
+            form hx-post="/fragments/tasks" _="on htmx:afterOnLoad send click to #refresh-tasks"
+                hx-target="#new-result" hx-swap="morph:innerHTML" .my-3 {
                 // TODO: wire from request handlers userdata extension into here as parameter
                 input type="hidden" name="owner" value=[user.map(|u| u.id)];
                 input type="hidden" name="edit_target" value=[task.edit_target];

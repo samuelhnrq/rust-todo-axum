@@ -37,31 +37,36 @@ pub(crate) async fn fragment_controller(State(state): State<HyperTarot>) -> Mark
 
 pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
     html! {
-        table .table #all-tasks {
-            thead {
-                tr {
-                    td { "Title" }
-                    td { "Description" }
-                    td { "..." }
-                }
-            }
-            tbody {
-                @for tasks in tasks {
+        #tasks-table {
+            table .table #all-tasks {
+                thead {
                     tr {
-                        td { (tasks.title) }
-                        td { (tasks.description) }
-                        td {
-                            button hx-delete="/fragments/tasks/delete" name="task_id" value=(tasks.id)
-                                hx-target="#all-tasks" .btn .btn-light .btn-sm {
-                                "🗑️"
-                            }
-                            button hx-post="/fragments/tasks" hx-target="#new-result" name="edit_target" value=(tasks.id)
-                                .btn .btn-light .btn-sm {
-                                "✏️"
+                        td { "Title" }
+                        td { "Description" }
+                        td { "..." }
+                    }
+                }
+                tbody {
+                    @for tasks in tasks {
+                        tr {
+                            td { (tasks.title) }
+                            td { (tasks.description) }
+                            td {
+                                button hx-delete="/fragments/tasks/delete" name="task_id" value=(tasks.id)
+                                    hx-target="#all-tasks" .btn .btn-light .btn-sm {
+                                    "🗑️"
+                                }
+                                button hx-post="/fragments/tasks" hx-target="#new-result" name="edit_target"
+                                    value=(tasks.id) .btn .btn-light .btn-sm {
+                                    "✏️"
+                                }
                             }
                         }
                     }
                 }
+            }
+            button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target="#tasks-table" hx-swap="morph:innerHTML" {
+                "Refresh list"
             }
         }
     }

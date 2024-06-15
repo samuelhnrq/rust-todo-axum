@@ -17,10 +17,7 @@ pub async fn homepage(
     let body = html! {
         h1.display-2 { "Hello HTMX!" }
         h1 { "Available tasks" }
-        #test { (list_tasks(tasks_result)) }
-        button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target="#test" {
-            "Refresh list"
-        }
+        (list_tasks(tasks_result))
         #new-task-form { (new_task(state, None, usr.map(|Extension(u)| u)).await) }
     };
     scaffolding("Hello World", &body)
