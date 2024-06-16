@@ -1,3 +1,7 @@
+use crate::fragments::tasks_commons::{
+    TASK_FORM_ID_CSS, TASK_LIST_TABLE_ID, TASK_LIST_TABLE_ID_CSS,
+};
+
 use super::error::build_error_fragment;
 use axum::{extract::State, response::Redirect, Form};
 use entity::{
@@ -37,7 +41,7 @@ pub(crate) async fn fragment_controller(State(state): State<HyperTarot>) -> Mark
 
 pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
     html! {
-        #tasks-table {
+        div id=(TASK_LIST_TABLE_ID) {
             table .table #all-tasks {
                 thead {
                     tr {
@@ -53,10 +57,10 @@ pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
                             td { (tasks.description) }
                             td {
                                 button hx-delete="/fragments/tasks/delete" name="task_id" value=(tasks.id)
-                                    hx-target="#all-tasks" .btn .btn-light .btn-sm {
+                                    hx-target=(TASK_LIST_TABLE_ID_CSS) .btn .btn-light .btn-sm {
                                     "🗑️"
                                 }
-                                button hx-post="/fragments/tasks" hx-target="#new-result" name="edit_target"
+                                button hx-post="/fragments/tasks" hx-target=(TASK_FORM_ID_CSS) name="edit_target"
                                     value=(tasks.id) .btn .btn-light .btn-sm {
                                     "✏️"
                                 }
@@ -65,7 +69,8 @@ pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
                     }
                 }
             }
-            button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target="#tasks-table" hx-swap="morph:innerHTML" {
+            button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target=(TASK_LIST_TABLE_ID_CSS)
+                hx-swap="morph:innerHTML" {
                 "Refresh list"
             }
         }

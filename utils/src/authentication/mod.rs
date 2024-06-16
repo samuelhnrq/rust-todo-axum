@@ -57,7 +57,10 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
                     .await
                     .inspect_err(|err| log::error!("Failed to refresh token: '{:?}'", err))
                     .ok()?;
-                log::debug!("Successfully refreshed, persisting the new token");
+                log::debug!(
+                    "Successfully refreshed, persisting the new token {}",
+                    refreshed.access_token
+                );
                 *jar = jar
                     .clone()
                     .add(safe_cookie("token", &refreshed.access_token));

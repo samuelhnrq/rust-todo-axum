@@ -11,6 +11,8 @@ use serde_valid::{
 use utils::state::HyperTarot;
 use uuid::Uuid;
 
+use crate::fragments::tasks_commons::{TASK_FORM_ID, TASK_FORM_ID_CSS};
+
 #[derive(Deserialize, Default, Debug, Clone, Validate)]
 pub struct Payload {
     #[validate(min_length = 3)]
@@ -132,7 +134,7 @@ pub async fn new_task(
         in_task
     };
     html! {
-        #new-result {
+        div id=(TASK_FORM_ID) {
             style { (PreEscaped(STYLES)) }
             h2 .my-3 {
                 @if task.edit_target.as_ref().map_or(true, String::is_empty) {
@@ -142,7 +144,7 @@ pub async fn new_task(
                 }
             }
             form hx-post="/fragments/tasks" _="on htmx:afterOnLoad send click to #refresh-tasks"
-                hx-target="#new-result" hx-swap="morph:innerHTML" .my-3 {
+                hx-target=(TASK_FORM_ID_CSS) hx-swap="morph:innerHTML" .my-3 {
                 // TODO: wire from request handlers userdata extension into here as parameter
                 input type="hidden" name="owner" value=[user.map(|u| u.id)];
                 input type="hidden" name="edit_target" value=[task.edit_target];

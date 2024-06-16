@@ -15,10 +15,10 @@ pub async fn homepage(
 ) -> Markup {
     let tasks_result = list_all(&state.connection, None, None).await.unwrap();
     let body = html! {
-        h1.display-2 { "Hello HTMX!" }
+        h1.display-2 { "Welcome to Hyper-Tarot!" }
         h1 { "Available tasks" }
         (list_tasks(tasks_result))
-        #new-task-form { (new_task(state, None, usr.map(|Extension(u)| u)).await) }
+        (new_task(state, None, usr.map(|Extension(u)| u)).await)
     };
     scaffolding("Hello World", &body)
 }

@@ -30,6 +30,7 @@ services:
       - KEYCLOAK_HTTP_PORT=8080
       - KEYCLOAK_EXTRA_ARGS=--import-realm
       - KEYCLOAK_DATABASE_HOST=db
+      - TZ=UTC
     volumes:
       - ./migration/kc_export.json:/opt/bitnami/keycloak/data/import/kc_export.json:ro
     depends_on:

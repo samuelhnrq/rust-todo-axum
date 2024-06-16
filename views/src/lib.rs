@@ -3,7 +3,7 @@ use axum::{
     Router,
 };
 use fragments::{
-    list_tasks::delete_task_controller, list_tasks_controller, new_tasks_controller,
+    list_tasks_controller, new_tasks_controller, tasks_list::delete_task_controller,
     user_fragment_controller,
 };
 use pages::homepage;
