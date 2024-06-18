@@ -60,6 +60,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   migrate-db:
+    if: github.ref_name == 'main'
     needs: build-docker
     runs-on: ubuntu-latest
     name: "↗️ Migrate DB"
@@ -76,7 +77,8 @@ jobs:
           tar -xf liquibase-4.28.0.tar.gz liquibase internal
           ./liquibase update
   deploy:
-    needs: build-docker
+    if: github.ref_name == 'main'
+    needs: migrate-db
     runs-on: ubuntu-latest
     name: "🚀 Deploy to fly"
     permissions:

@@ -1,4 +1,7 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    collections::HashMap,
+    net::{IpAddr, SocketAddr},
+};
 
 use axum::{
     extract::{ConnectInfo, Query, Request, State},
@@ -18,6 +21,41 @@ use super::{
     models::{AuthRedirectQuery, Claims},
     user_info_to_db, validate_cookie,
 };
+
+#[axum_macros::debug_handler]
+pub async fn logout_handler(
+    State(state): State<HyperTarot>,
+    jar: PrivateCookieJar,
+) -> impl IntoResponse {
+    log::info!("starting logout");
+    let mut params = HashMap::<&str, String>::new();
+    params.insert("client_id", LOADED_CONFIG.oauth_client_id.to_string());
+    if let Some(refresh_token) = jar.get("refresh_token") {
+        log::info!("has refresh adding to logout payload");
+        params.insert("refresh_token", refresh_token.value_trimmed().to_string());
+    }
+    let resp = state
+        .requests
+        .post(state.oauth_config.end_session_endpoint)
+        .basic_auth(
+            &LOADED_CONFIG.oauth_client_id,
+            Some(&LOADED_CONFIG.oauth_client_secret),
+        )
+        .form(&params)
+        .send()
+        .await
+        .inspect_err(|err| log::error!("Failed to revoke endpoint {:?}", err))
+        .ok();
+    let jar = if let Some(x) = resp {
+        let body = x.text().await.unwrap_or_default();
+        log::info!("Got successfull answer! {body}");
+        jar.remove(safe_cookie("token", ""))
+            .remove(safe_cookie("refresh_token", ""))
+    } else {
+        jar
+    };
+    (jar, Redirect::to("/"))
+}
 
 #[axum_macros::debug_handler]
 pub async fn handle_oauth_redirect(

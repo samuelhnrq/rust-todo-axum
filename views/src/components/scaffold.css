@@ -5,12 +5,23 @@ html {
     font-family: sans-serif;
 }
 
-nav.navbar ul {
-    display: flex;
-}
-
 button {
     padding: 0.375rem 0.75rem;
     border: none;
     background-color: unset;
+    font-size: 1rem;
+}
+
+#loading-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(200, 200, 200, 0.85);
+    backdrop-filter: blur(7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

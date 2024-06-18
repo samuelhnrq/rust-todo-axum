@@ -16,21 +16,23 @@ pub(crate) fn navbar() -> Markup {
                     aria-label="Toggle navigation" {
                         span .fa-bars {}
                 }
-                span .collapse .navbar-collapse #navbarNav {
-                    ul .navbar-nav {
-                        li .nav-item {
-                            a .nav-link href="#" { "Home" }
-                        }
-                        li .nav-item {
-                            a .nav-link href="#" { "Features" }
-                        }
-                        li .nav-item {
-                            a .nav-link href="#" { "Pricing" }
-                        }
-                    }
-                }
                 div hx-get="/fragments/login" hx-trigger="load" {
                     (spinner())
+                }
+                div {
+                    span .collapse .navbar-collapse #navbarNav {
+                        ul .navbar-nav {
+                            li .nav-item {
+                                a .nav-link href="#" { "Home" }
+                            }
+                            li .nav-item {
+                                a .nav-link href="#" { "Features" }
+                            }
+                            li .nav-item {
+                                a .nav-link href="#" { "Pricing" }
+                            }
+                        }
+                    }
                 }
             }
         }

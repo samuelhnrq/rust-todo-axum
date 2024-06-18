@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use axum::{extract::State, Extension, Form};
 use entity::{generated::users, tasks::UpsertTask};
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup};
 use serde::Deserialize;
 use serde_valid::{
     validation::{Errors, PropertyErrorsMap},
@@ -78,8 +78,6 @@ pub fn text_field<T: Into<String>>(
     }
 }
 
-const STYLES: &str = include_str!("new_task.css");
-
 pub async fn new_task(
     state: HyperTarot,
     task_result: Option<Payload>,
@@ -135,7 +133,6 @@ pub async fn new_task(
     };
     html! {
         div id=(TASK_FORM_ID) {
-            style { (PreEscaped(STYLES)) }
             h2 .my-3 {
                 @if task.edit_target.as_ref().map_or(true, String::is_empty) {
                     "Create task"

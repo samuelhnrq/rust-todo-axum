@@ -3,10 +3,10 @@ use crate::fragments::tasks_commons::{
 };
 
 use super::error::build_error_fragment;
-use axum::{extract::State, response::Redirect, Form};
+use axum::{extract::State, response::Redirect, Extension, Form};
 use entity::{
-    generated::tasks,
-    tasks::{delete_task, list_all},
+    generated::{tasks, users},
+    tasks::{delete_task, list_for_user},
 };
 use maud::{html, Markup};
 use serde::Deserialize;
@@ -30,8 +30,15 @@ pub(crate) async fn delete_task_controller(
 }
 
 #[axum_macros::debug_handler]
-pub(crate) async fn fragment_controller(State(state): State<HyperTarot>) -> Markup {
-    let tasks_result = list_all(&state.connection, None, None).await;
+pub(crate) async fn fragment_controller(
+    State(state): State<HyperTarot>,
+    user: Option<Extension<users::Model>>,
+) -> Markup {
+    if user.is_none() {
+        return build_error_fragment("No user");
+    }
+    let Extension(user) = user.unwrap();
+    let tasks_result = list_for_user(&state.connection, &user, None, None).await;
     if tasks_result.is_err() {
         return build_error_fragment("dasd");
     }

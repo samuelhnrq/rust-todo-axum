@@ -1,18 +1,17 @@
 "use strict";
 
 function copyPreloads() {
+  if (document.readyState !== "interactive") return;
   const preloads = document.querySelectorAll('link[rel="preload"]');
-  console.log("found", preloads.length, "links");
-  preloads.forEach((x) => {
-    const realLink = x.cloneNode();
+  preloads.forEach((preloadLink) => {
+    const realLink = preloadLink.cloneNode();
     if (realLink.href.endsWith(".css")) {
       realLink.rel = "stylesheet";
     }
-    x.after(realLink);
+    preloadLink.after(realLink);
   });
+  document.removeEventListener("readystatechange", copyPreloads);
 }
 
-window.addEventListener("load", copyPreloads, { once: true });
-if (document.readyState == "interactive") {
-  copyPreloads();
-}
+document.addEventListener("readystatechange", copyPreloads);
+copyPreloads();

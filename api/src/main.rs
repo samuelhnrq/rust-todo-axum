@@ -1,23 +1,16 @@
 use std::net::SocketAddr;
 
-use crate::adapters::{
-    controllers::{tasks, users},
-    static_files::build_service,
-};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    middleware,
-    routing::{get, post},
-    BoxError, Router,
-};
+use crate::adapters::static_files::build_service;
+use axum::{extract::State, http::StatusCode, middleware, routing::get, BoxError, Router};
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use utils::authentication::{
-    handle_oauth_redirect, models::REDIRECT_PATH, required_login_middleware, user_data_extension,
+    handle_oauth_redirect, logout_handler,
+    models::{LOGOUT_PATH, REDIRECT_PATH},
+    user_data_extension,
 };
 use utils::state::HyperTarot;
 use views::views_router;
@@ -35,23 +28,18 @@ async fn ping(State(state): State<HyperTarot>) -> (StatusCode, &'static str) {
 }
 
 fn build_app(state: HyperTarot) -> Router {
-    let private_router = Router::new()
-        .route("/tasks", get(tasks::get_all))
-        // .route("/tasks", post(tasks::create))
-        .route("/users", get(users::get_all))
-        .route("/users", post(users::create))
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            required_login_middleware,
-        ));
+    // .layer(middleware::from_fn_with_state(
+    //   state.clone(),
+    //   required_login_middleware,
+    // ));
     Router::new()
-        .nest("/api", private_router)
         .nest("/", views_router())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             user_data_extension,
         ))
         .route(REDIRECT_PATH, get(handle_oauth_redirect))
+        .route(LOGOUT_PATH, get(logout_handler))
         .nest_service("/public", build_service())
         .route("/ping", get(ping))
         .layer(TraceLayer::new_for_http())

@@ -1,7 +1,7 @@
-use crate::generated::{prelude::Tasks, tasks};
+use crate::generated::{prelude::Tasks, tasks, users};
 use sea_orm::{
-    prelude::Uuid, sea_query::OnConflict, ActiveValue, DatabaseConnection, DbErr, EntityTrait,
-    Order, PaginatorTrait, QueryOrder,
+    prelude::Uuid, sea_query::OnConflict, ActiveValue, ColumnTrait, DatabaseConnection, DbErr,
+    EntityTrait, Order, PaginatorTrait, QueryFilter, QueryOrder,
 };
 
 #[derive(Debug, Clone)]
@@ -21,12 +21,14 @@ pub async fn get_by_id(db: &DatabaseConnection, id: &Uuid) -> Option<tasks::Mode
         .flatten()
 }
 
-pub async fn list_all(
+pub async fn list_for_user(
     db: &DatabaseConnection,
+    user: &users::Model,
     num_page: Option<u16>,
     page_size: Option<u16>,
 ) -> Result<Vec<tasks::Model>, DbErr> {
     Tasks::find()
+        .filter(tasks::Column::OwnerId.eq(user.id))
         .order_by(tasks::Column::CreatedAt, Order::Desc)
         .paginate(db, u64::from(page_size.unwrap_or(50)))
         .fetch_page(u64::from(num_page.unwrap_or(0)))

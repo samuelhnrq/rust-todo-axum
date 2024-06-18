@@ -1,3 +1,5 @@
+use crate::components::spinner;
+
 use super::navbar::navbar;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 
@@ -23,10 +25,13 @@ pub(crate) fn scaffolding(title: &'static str, children: &Markup) -> Markup {
                 script defer src="/public/_hyperscript.min.js" {}
             }
             body hx-ext="morph" hx-boost="true" {
+                #loading-page _="on load from window set *display to 'none'" {
+                    (spinner())
+                }
                 banner {
                     (navbar()) // pass user here
                 }
-                main.container {
+                main.container .py-4 {
                     (children)
                 }
                 script { (PreEscaped(BASIC_JS)) }

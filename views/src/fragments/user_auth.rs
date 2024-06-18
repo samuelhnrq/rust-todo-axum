@@ -3,7 +3,10 @@ use axum_extra::extract::PrivateCookieJar;
 use entity::generated::users;
 use maud::{html, Markup};
 use utils::{
-    authentication::{generate_auth_url, models::OpenIdConfiguration},
+    authentication::{
+        generate_auth_url,
+        models::{OpenIdConfiguration, LOGOUT_PATH},
+    },
     state::HyperTarot,
 };
 
@@ -36,14 +39,24 @@ struct AuthParams<'a> {
 fn login_button(params: &mut AuthParams) -> Markup {
     let url = generate_auth_url(params.jar, params.auth_config);
     html! {
-        a href=(url) { "Do login" }
+        a href=(url) hx-boost="false" id="login-anchor" { "Do login" }
+    }
+}
+
+fn user_avatar(user: &users::Model) -> Markup {
+    // let url = generate_logout_url(params.auth_config);
+    html! {
+        #user-avatar {
+            span { "Welcome " (user.name) "! " }
+            a href=(LOGOUT_PATH) hx-boost="false" { "Logout" }
+        }
     }
 }
 
 fn user_auth(params: &mut AuthParams) -> Markup {
     html! {
-        @match params.user.as_ref() {
-            Some(user) => div { "Welcome " (user.name) } ,
+        @match params.user.clone() {
+            Some(user) => (user_avatar(&user)) ,
             None => (login_button(params)),
         }
     }

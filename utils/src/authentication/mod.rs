@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 use axum::BoxError;
 use axum_extra::extract::{
@@ -173,6 +175,17 @@ async fn exchange_token(
     serde_json::from_str(&body.clone())
         .inspect_err(|err| log::error!("failed to deserialize '{}', error: {:?}", body, err))
         .map_err(|err| -> BoxError { Box::new(err) })
+}
+
+#[must_use]
+pub fn generate_logout_url(config: &OpenIdConfiguration) -> String {
+    let Ok(mut end_session_url) = Url::parse(&config.end_session_endpoint) else {
+        return "Failed to generate logout URL".to_string();
+    };
+    let mut logout_params = HashMap::new();
+    logout_params.insert("client_id", LOADED_CONFIG.oauth_client_id.clone());
+    end_session_url.set_query(serde_urlencoded::to_string(logout_params).ok().as_deref());
+    end_session_url.to_string()
 }
 
 pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguration) -> String {

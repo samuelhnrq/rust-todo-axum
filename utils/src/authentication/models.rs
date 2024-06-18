@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::config::LOADED_CONFIG;
 
 pub const REDIRECT_PATH: &str = "/auth/redirect";
+pub const LOGOUT_PATH: &str = "/auth/logout";
 
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct Claims {
@@ -43,6 +44,7 @@ pub struct OpenIdConfiguration {
     // pub(crate) issuer: String,
     pub(crate) jwks_uri: String,
     pub(crate) authorization_endpoint: String,
+    pub(crate) end_session_endpoint: String,
     // pub(crate) backchannel_logout_supported: bool,
     // pub(crate) frontchannel_logout_supported: bool,
     // pub(crate) grant_types_supported: Vec<String>,
