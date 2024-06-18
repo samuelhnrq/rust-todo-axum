@@ -34,11 +34,11 @@ fn build_app(state: HyperTarot) -> Router {
     // ));
     Router::new()
         .nest("/", views_router())
+        .route(REDIRECT_PATH, get(handle_oauth_redirect))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             user_data_extension,
         ))
-        .route(REDIRECT_PATH, get(handle_oauth_redirect))
         .route(LOGOUT_PATH, get(logout_handler))
         .nest_service("/public", build_service())
         .route("/ping", get(ping))

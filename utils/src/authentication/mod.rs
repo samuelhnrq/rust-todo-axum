@@ -59,15 +59,22 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
                     .await
                     .inspect_err(|err| log::error!("Failed to refresh token: '{:?}'", err))
                     .ok()?;
-                log::debug!(
-                    "Successfully refreshed, persisting the new token {}",
-                    refreshed.access_token
-                );
+                log::debug!("Successfully refreshed, persisting the new token");
                 *jar = jar
                     .clone()
                     .add(safe_cookie("token", &refreshed.access_token));
-                let decoded = decode::<Claims>(&jwt, &state.jwk, &build_validation());
-                return decoded.map(|x| x.claims).ok();
+                let decoded =
+                    decode::<Claims>(&refreshed.access_token, &state.jwk, &build_validation());
+                return decoded
+                    .inspect_err(|err| {
+                        log::error!(
+                            "Failed decoding JWT: {:?} (jwt={})",
+                            err,
+                            &refreshed.access_token
+                        );
+                    })
+                    .map(|x| x.claims)
+                    .ok();
             } else if *err.kind() == ErrorKind::InvalidAudience {
                 log::debug!("Invalid audience JWT: {jwt}");
             }

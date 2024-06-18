@@ -13,6 +13,7 @@ pub async fn homepage(
     State(state): State<HyperTarot>,
     usr: Option<Extension<users::Model>>,
 ) -> Markup {
+    log::info!("rendering homepage");
     let tasks_result = if let Some(user) = usr.as_ref() {
         list_for_user(&state.connection, user, None, None)
             .await
@@ -30,7 +31,10 @@ pub async fn homepage(
             h2 {
                 "Please login!"
             }
-            a hx-boost="false" .btn .btn-primary _="on load set @href to #login-anchor@href" { "Login" }
+            a hx-boost="false" .btn .btn-primary
+                    _="on mutation of anything from closest <div/> to #login-anchor set @href to #login-anchor@href" {
+                "Login"
+            }
         }
     };
     scaffolding("Hello World", &body)

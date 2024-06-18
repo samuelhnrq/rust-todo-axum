@@ -164,6 +164,8 @@ pub async fn user_data_extension(
         } else {
             log::error!("JWT valid bug sub not found in database, not trusting cookie");
         }
+    } else {
+        log::debug!("Cookie did not pass validation");
     }
     (jar, next.run(request).await)
 }

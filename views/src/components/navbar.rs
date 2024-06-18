@@ -6,7 +6,7 @@ pub(crate) fn navbar() -> Markup {
     html! {
         nav .navbar .navbar-expand-lg .bg-body-tertiary {
             .container-fluid {
-                a .navbar-brand href="#" { "Navbar" }
+                a .navbar-brand href="#" { "Hyper Tarot" }
                 button .button .navbar-toggler
                     type="button"
                     data-bs-toggle="collapse"
@@ -18,6 +18,7 @@ pub(crate) fn navbar() -> Markup {
                 }
                 div hx-get="/fragments/login" hx-trigger="load" {
                     (spinner())
+                    a id="login-anchor" style="display: none" {}
                 }
                 div {
                     span .collapse .navbar-collapse #navbarNav {
