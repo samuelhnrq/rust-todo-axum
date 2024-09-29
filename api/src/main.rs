@@ -28,10 +28,6 @@ async fn ping(State(state): State<HyperTarot>) -> (StatusCode, &'static str) {
 }
 
 fn build_app(state: HyperTarot) -> Router {
-    // .layer(middleware::from_fn_with_state(
-    //   state.clone(),
-    //   required_login_middleware,
-    // ));
     Router::new()
         .nest("/", views_router())
         .route(REDIRECT_PATH, get(handle_oauth_redirect))

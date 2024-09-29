@@ -76,7 +76,8 @@ pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
                     }
                 }
             }
-            button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks" hx-target=(TASK_LIST_TABLE_ID_CSS)
+            button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks"
+                hx-target=(TASK_LIST_TABLE_ID_CSS)
                 hx-swap="morph:innerHTML" {
                 "Refresh list"
             }

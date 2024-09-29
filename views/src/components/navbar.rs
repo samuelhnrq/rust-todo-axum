@@ -4,36 +4,12 @@ use super::spinner;
 
 pub(crate) fn navbar() -> Markup {
     html! {
-        nav .navbar .navbar-expand-lg .bg-body-tertiary {
-            .container-fluid {
+        nav .navbar .bg-body-tertiary {
+            .nav-container {
                 a .navbar-brand href="#" { "Hyper Tarot" }
-                button .button .navbar-toggler
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation" {
-                        span .fa-bars {}
-                }
                 div hx-get="/fragments/login" hx-trigger="load" {
                     (spinner())
                     a id="login-anchor" style="display: none" {}
-                }
-                div {
-                    span .collapse .navbar-collapse #navbarNav {
-                        ul .navbar-nav {
-                            li .nav-item {
-                                a .nav-link href="#" { "Home" }
-                            }
-                            li .nav-item {
-                                a .nav-link href="#" { "Features" }
-                            }
-                            li .nav-item {
-                                a .nav-link href="#" { "Pricing" }
-                            }
-                        }
-                    }
                 }
             }
         }

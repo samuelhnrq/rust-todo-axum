@@ -16,7 +16,7 @@ pub(crate) fn scaffolding(title: &'static str, children: &Markup) -> Markup {
                 meta charset="utf-8";
                 link type="text/css" rel="preload" as="style"
                     href="/public/bootstrap.min.css";
-                style #critical-css { (CRITICAL_CSS) }
+                style #critical-css { (PreEscaped(CRITICAL_CSS)) }
                 script
                     defer
                     src="/public/bootstrap.min.js" {}

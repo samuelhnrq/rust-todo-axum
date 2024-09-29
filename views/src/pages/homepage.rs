@@ -32,7 +32,8 @@ pub async fn homepage(
                 "Please login!"
             }
             a hx-boost="false" .btn .btn-primary
-                    _="on mutation of anything from closest <div/> to #login-anchor set @href to #login-anchor@href" {
+                    _="on mutation of anything from <nav.navbar/> set @href to #login-anchor@href
+                    on load set @href to #login-anchor@href" {
                 "Login"
             }
         }
