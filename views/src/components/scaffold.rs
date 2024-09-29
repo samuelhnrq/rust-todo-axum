@@ -25,11 +25,12 @@ pub(crate) fn scaffolding(title: &'static str, children: &Markup) -> Markup {
                 script defer src="/public/_hyperscript.min.js" {}
             }
             body hx-ext="morph" hx-boost="true" {
-                #loading-page _="on load from window set *display to 'none'" {
+                #loading-page _="on load from document
+                        set my *display to 'none' then log 'hello world'" {
                     (spinner())
                 }
                 banner {
-                    (navbar()) // pass user here
+                    (navbar())
                 }
                 main.container .py-4 {
                     (children)

@@ -11,7 +11,10 @@ use serde_valid::{
 use utils::state::HyperTarot;
 use uuid::Uuid;
 
-use crate::fragments::tasks_commons::{TASK_FORM_ID, TASK_FORM_ID_CSS};
+use crate::{
+    components::spinner,
+    fragments::tasks_commons::{TASK_FORM_ID, TASK_FORM_ID_CSS},
+};
 
 #[derive(Deserialize, Default, Debug, Clone, Validate)]
 pub struct Payload {
@@ -60,6 +63,7 @@ impl TryFrom<Payload> for UpsertTask {
 pub fn text_field<T: Into<String>>(
     field: &'static str,
     value: Option<T>,
+    pattern: Option<&str>,
     errors: Option<&Errors>,
 ) -> Markup {
     let id = "form-field-".to_string() + field;
@@ -68,7 +72,7 @@ pub fn text_field<T: Into<String>>(
         .form-group {
             label .form-label for=(id) .text-capitalize { (field) }
             input .form-control id=(id) type="textbox" name=(field) aria-describedby=(id_desc)
-                value=[value.map(Into::into)];
+                value=[value.map(Into::into)] pattern=[pattern];
             @if let Some(Errors::NewType(val)) = errors {
                 @for err in val {
                     .form-text .text-danger id=(id_desc) { (err.to_string()) }
@@ -132,7 +136,7 @@ pub async fn new_task(
         in_task
     };
     html! {
-        div id=(TASK_FORM_ID) {
+        div id=(TASK_FORM_ID) .position-relative {
             h2 .my-3 {
                 @if task.edit_target.as_ref().map_or(true, String::is_empty) {
                     "Create task"
@@ -140,16 +144,21 @@ pub async fn new_task(
                     "Edit Task"
                 }
             }
-            form hx-post="/fragments/tasks" _="on htmx:afterOnLoad send click to #refresh-tasks"
-                hx-target=(TASK_FORM_ID_CSS) hx-swap="morph:innerHTML" .my-3 {
+            .spinner  style="display: none"
+                _="on htmx:beforeRequest from body set my *display to 'flex'
+                   on htmx:afterRequest from body set my *display to 'none'"  {
+                (spinner())
+            }
+            form #task-edit-form hx-post="/fragments/tasks" _="on htmx:afterRequest wait 0.1s then send click to #refresh-tasks"
+                hx-target=(TASK_FORM_ID_CSS) .my-3 {
                 // TODO: wire from request handlers userdata extension into here as parameter
                 input type="hidden" name="owner" value=[user.map(|u| u.id)];
                 input type="hidden" name="edit_target" value=[task.edit_target];
                 .mb-3 {
-                    (text_field("title", task.title, error_map.get("title")))
+                    (text_field("title", task.title, Some("\\w{,3}"), error_map.get("title")))
                 }
                 .mb-3 {
-                    (text_field("description", task.description, error_map.get("description")))
+                    (text_field("description", task.description, None, error_map.get("description")))
                 }
                 input .btn .btn-primary type="submit";
             }

@@ -1,5 +1,6 @@
-use crate::fragments::tasks_commons::{
-    TASK_FORM_ID_CSS, TASK_LIST_TABLE_ID, TASK_LIST_TABLE_ID_CSS,
+use crate::{
+    components::spinner,
+    fragments::tasks_commons::{TASK_FORM_ID_CSS, TASK_LIST_TABLE_ID, TASK_LIST_TABLE_ID_CSS},
 };
 
 use super::error::build_error_fragment;
@@ -48,7 +49,12 @@ pub(crate) async fn fragment_controller(
 
 pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
     html! {
-        div id=(TASK_LIST_TABLE_ID) {
+        div id=(TASK_LIST_TABLE_ID) .position-relative {
+            .spinner style="display: none"
+                _="on htmx:beforeRequest from body set my *display to 'flex'
+                   on htmx:afterRequest from body set my *display to 'none'" {
+                (spinner())
+            }
             table .table #all-tasks {
                 thead {
                     tr {
@@ -77,8 +83,7 @@ pub(crate) fn list_tasks(tasks: Vec<tasks::Model>) -> Markup {
                 }
             }
             button .btn .btn-secondary #refresh-tasks hx-get="./fragments/tasks"
-                hx-target=(TASK_LIST_TABLE_ID_CSS)
-                hx-swap="morph:innerHTML" {
+                hx-target=(TASK_LIST_TABLE_ID_CSS) {
                 "Refresh list"
             }
         }
