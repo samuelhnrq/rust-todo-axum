@@ -4,6 +4,8 @@ WORKDIR /app
 
 ENV CARGO_HOME=.cargo_cache
 
+RUN rustup component add rustfmt clippy
+
 COPY . ./
 RUN --mount=type=cache,target=.cargo_cache \
   --mount=type=cache,target=target \
@@ -14,12 +16,15 @@ RUN --mount=type=cache,target=.cargo_cache \
 
 FROM debian:bookworm-slim
 
-ENV PORT=8080
-ENV WWW_STATIC_FILES=/opt/www
+RUN mkdir /app
+WORKDIR /app
+COPY ./views/www /app/www
+COPY ./config.toml /app/config.toml
+COPY --from=build /app/rust_todo_api /app/rust_todo_api
 
-COPY ./views/www /opt/www
-COPY --from=build /app/rust_todo_api /usr/bin
+ENV HT_WWW_STATIC_FILES=/app/www
 
 EXPOSE 8889
+
 # Avoiding recieving PID 1
-CMD ["rust_todo_api"]
+CMD ["/app/rust_todo_api"]

@@ -47,9 +47,10 @@ fn add_config_file(config_builder: ConfigBuilder<DefaultState>) -> ConfigBuilder
 /// # Panics
 /// If missing configuration
 pub static LOADED_CONFIG: LazyLock<Config> = LazyLock::new(|| {
-  let mut config_builder = Configurer::builder().add_source(Environment::with_prefix("HT"));
+  let mut config_builder = Configurer::builder();
   config_builder = add_config_file(config_builder);
   let config = config_builder
+    .add_source(Environment::with_prefix("HT"))
     .build()
     .expect("Failed loading configuration sources");
   config

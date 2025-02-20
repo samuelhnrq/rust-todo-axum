@@ -1,5 +1,6 @@
 networks:
-  main: {}
+  main:
+    driver: bridge
 
 volumes:
   db-data: {}
@@ -10,16 +11,21 @@ services:
       context: .
       dockerfile: Local.Dockerfile
     depends_on:
-      - db
-      - keycloak
+      pg_db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
     environment:
-      RUST_LOG: DEBUG
+      RUST_LOG: DEBUG,hyper_util=info,rustls=info
+      PORT: 8889
+      HT_DATABASE_URL: postgres://rust_todo:rust_todo@pg_db/rust_todo
+      HT_OAUTH_AUTODISCOVER_URL: "http://keycloak:8080/realms/hyper-tarot"
     ports:
-      - "8080:8080"
+      - "8889:8889"
     networks:
       - main
   keycloak:
-    image: bitnami/keycloak:25
+    image: bitnami/keycloak:26
     restart: unless-stopped
     environment:
       - KEYCLOAK_DATABASE_USER=keycloak
@@ -30,23 +36,23 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=keycloak
       - KEYCLOAK_HTTP_PORT=8080
       - KEYCLOAK_EXTRA_ARGS=--import-realm
-      - KEYCLOAK_DATABASE_HOST=db
+      - KEYCLOAK_DATABASE_HOST=pg_db
       - TZ=UTC
     volumes:
       - ./migration/kc_export.json:/opt/bitnami/keycloak/data/import/kc_export.json:ro
     depends_on:
-      db:
+      pg_db:
         condition: service_healthy
     networks:
       - main
     ports:
       - 8888:8080
-  db:
-    image: "postgres:16"
+  pg_db:
+    image: postgres:17
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
-      # start_interval: 0s
+      start_interval: 1s
       interval: 2s
       timeout: 2s
       retries: 5
