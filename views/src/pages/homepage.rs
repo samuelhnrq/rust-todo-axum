@@ -16,8 +16,7 @@ pub async fn homepage(
   State(state): State<HyperTarot>,
   usr: Result<Extension<users::Model>, ExtensionRejection>,
 ) -> Markup {
-  log::info!("rendering homepage");
-  let tasks_result = if let Ok(user) = usr.as_ref() {
+  let tasks_result = if let Ok(Extension(user)) = usr.as_ref() {
     list_for_user(&state.connection, user, None, None)
       .await
       .unwrap_or_default()
