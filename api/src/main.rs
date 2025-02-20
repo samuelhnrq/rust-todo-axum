@@ -1,8 +1,10 @@
 use std::net::SocketAddr;
+use std::thread::available_parallelism;
 
 use crate::adapters::static_files::build_service;
 use axum::{extract::State, http::StatusCode, middleware, routing::get, BoxError, Router};
 use tokio::net::TcpListener;
+use tokio::runtime;
 use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing::level_filters::LevelFilter;
@@ -29,7 +31,7 @@ async fn ping(State(state): State<HyperTarot>) -> (StatusCode, &'static str) {
 
 fn build_app(state: HyperTarot) -> Router {
   Router::new()
-    .nest("/", views_router())
+    .merge(views_router())
     .route(REDIRECT_PATH, get(handle_oauth_redirect))
     .layer(middleware::from_fn_with_state(
       state.clone(),
@@ -42,8 +44,23 @@ fn build_app(state: HyperTarot) -> Router {
     .with_state(state)
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
-async fn main() -> Result<(), BoxError> {
+fn main() {
+  let threads = match available_parallelism() {
+    Ok(threads) => threads.get(),
+    Err(_) => 1,
+  };
+
+  runtime::Builder::new_multi_thread()
+    .enable_all()
+    .worker_threads(threads)
+    .build()
+    .unwrap()
+    .block_on(async {
+      app_main().await.unwrap();
+    });
+}
+
+async fn app_main() -> Result<(), BoxError> {
   let env_log_config = EnvFilter::builder()
     .with_default_directive(LevelFilter::INFO.into())
     .from_env_lossy();
@@ -56,10 +73,12 @@ async fn main() -> Result<(), BoxError> {
   let app = build_app(state.clone());
   let service = app.into_make_service_with_connect_info::<SocketAddr>();
   let target_port: u16 =
-    std::env::var("PORT").map_or(8080, |port_str| port_str.parse().expect("Invalid PORT env"));
+    std::env::var("PORT").map_or(8889, |port_str| port_str.parse().expect("Invalid PORT env"));
   log::info!("Trying to bind on port {}", target_port);
   let bind_addr = SocketAddr::new("0.0.0.0".parse()?, target_port);
-  let listener = TcpListener::bind(bind_addr).await?;
+  let listener = TcpListener::bind(bind_addr)
+    .await
+    .expect("Failed to bind on port");
   log::info!("Socket bound successfully, starting app");
 
   axum::serve(listener, service)
@@ -81,7 +100,7 @@ async fn main() -> Result<(), BoxError> {
       state.connection.close().await.unwrap();
     })
     .await
-    .expect("Failed to bind on port 8080");
+    .expect("Failed to bind on port 8889");
   log::info!("Good bye");
   Ok(())
 }

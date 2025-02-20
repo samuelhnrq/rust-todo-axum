@@ -5,9 +5,9 @@ use crate::{
 
 use super::error::build_error_fragment;
 use axum::{
-  extract::{rejection::ExtensionRejection, State},
+  extract::{rejection::ExtensionRejection, Query, State},
   response::Redirect,
-  Extension, Form,
+  Extension,
 };
 use entity::{
   generated::{tasks, users},
@@ -26,7 +26,7 @@ pub(crate) struct DeletePayload {
 #[axum::debug_handler]
 pub(crate) async fn delete_task_controller(
   State(state): State<HyperTarot>,
-  Form(payload): Form<DeletePayload>,
+  Query(payload): Query<DeletePayload>,
 ) -> Redirect {
   delete_task(payload.task_id, &state.connection)
     .await

@@ -22,9 +22,9 @@ RUST_LOG = "DEBUG,rust_todo_api,utils,migration,entity,views,hyper_util=info,rus
 strategy = "canary"
 
 [http_service]
-internal_port = 8080
+internal_port = 8889
 force_https = true
-auto_stop_machines = true
+auto_stop_machines = 'stop'
 auto_start_machines = true
 min_machines_running = 0
 processes = ["app"]
