@@ -16,8 +16,7 @@ sea-orm = { workspace = true }
 jsonwebtoken = { workspace = true }
 log = { workspace = true }
 reqwest = { workspace = true }
-lru = { version = "^0.12" }
-once_cell = { workspace = true }
+lru = { version = "^0.13" }
 
 [lints]
 workspace = true

@@ -8,15 +8,15 @@ use crate::authentication::models::OpenIdConfiguration;
 
 #[derive(Clone)]
 pub struct HyperTarot {
-    pub connection: DatabaseConnection,
-    pub oauth_config: OpenIdConfiguration,
-    pub jwk: DecodingKey,
-    pub requests: Client,
-    pub key: Key,
+  pub connection: DatabaseConnection,
+  pub oauth_config: OpenIdConfiguration,
+  pub jwk: DecodingKey,
+  pub requests: Client,
+  pub key: Key,
 }
 
 impl FromRef<HyperTarot> for Key {
-    fn from_ref(state: &HyperTarot) -> Self {
-        state.key.clone()
-    }
+  fn from_ref(state: &HyperTarot) -> Self {
+    state.key.clone()
+  }
 }

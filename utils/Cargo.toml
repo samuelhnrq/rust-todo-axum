@@ -20,14 +20,12 @@ reqwest = { workspace = true }
 
 sea-orm = { workspace = true }
 axum-extra = { workspace = true }
-axum-macros = { workspace = true }
 tower = { workspace = true }
 tokio = { workspace = true }
 serde_urlencoded = "^0.7"
 serde_json = "^1.0.0"
 either = { version = "^1.0.0", features = ["serde"] }
-config = "^0.14.0"
-once_cell = { workspace = true }
+config = "^0.15.0"
 sha2 = "^0.10.8"
 base64ct = { version = "^1.6.0", features = ["alloc"] }
 uuid = { workspace = true }

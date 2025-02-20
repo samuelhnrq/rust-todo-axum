@@ -13,14 +13,13 @@ path = "src/lib.rs"
 entity = { path = "../entity" }
 utils = { path = "../utils" }
 
-maud = { version = "0.26", features = ["axum"] }
+maud = { version = "0.27", features = ["axum"] }
 serde_html_form = "0.2.5"
 serde_valid = { workspace = true }
 axum = { workspace = true }
 axum-extra = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
-axum-macros = { workspace = true }
 uuid = { workspace = true }
 
 [lints]

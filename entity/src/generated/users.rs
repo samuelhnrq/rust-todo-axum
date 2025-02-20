@@ -6,29 +6,29 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub id: Uuid,
-    pub name: String,
-    #[sea_orm(unique)]
-    pub email: String,
-    #[sea_orm(column_name = "createdAt")]
-    pub created_at: DateTime,
-    #[sea_orm(column_name = "updatedAt")]
-    pub updated_at: DateTime,
-    #[sea_orm(unique)]
-    pub oauth_sub: String,
+  #[sea_orm(primary_key, auto_increment = false)]
+  pub id: Uuid,
+  pub name: String,
+  #[sea_orm(unique)]
+  pub email: String,
+  #[sea_orm(column_name = "createdAt")]
+  pub created_at: DateTime,
+  #[sea_orm(column_name = "updatedAt")]
+  pub updated_at: DateTime,
+  #[sea_orm(unique)]
+  pub oauth_sub: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::tasks::Entity")]
-    Tasks,
+  #[sea_orm(has_many = "super::tasks::Entity")]
+  Tasks,
 }
 
 impl Related<super::tasks::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Tasks.def()
-    }
+  fn to() -> RelationDef {
+    Relation::Tasks.def()
+  }
 }
 
 impl ActiveModelBehavior for ActiveModel {}

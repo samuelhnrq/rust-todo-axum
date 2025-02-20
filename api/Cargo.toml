@@ -11,7 +11,6 @@ utils = { path = "../utils" }
 
 axum = { workspace = true }
 axum-extra = { workspace = true }
-axum-macros = { workspace = true }
 log = { workspace = true }
 tower = { workspace = true }
 tracing = { workspace = true }
