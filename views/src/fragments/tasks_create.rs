@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crate::filters;
 use axum::{
   extract::{
     rejection::{ExtensionRejection, FormRejection},
@@ -8,7 +9,7 @@ use axum::{
   Extension, Form,
 };
 use entity::{generated::users, tasks::UpsertTask};
-use maud::{html, Markup};
+use rinja::Template;
 use serde::Deserialize;
 use serde_valid::{
   validation::{Errors, PropertyErrorsMap},
@@ -17,18 +18,20 @@ use serde_valid::{
 use utils::state::HyperTarot;
 use uuid::Uuid;
 
-use crate::{
-  components::spinner,
-  fragments::tasks_commons::{TASK_FORM_ID, TASK_FORM_ID_CSS},
-};
-
 #[derive(Deserialize, Default, Debug, Clone, Validate)]
-pub struct Payload {
+pub struct CreateTaskPayload {
   #[validate(min_length = 3)]
   pub title: Option<String>,
   pub owner: Option<String>,
   pub description: Option<String>,
   pub edit_target: Option<String>,
+}
+
+#[derive(Template)] // this will generate the code...
+#[template(path = "task-form.jinja.html")] // using the template in this path, relative
+pub(crate) struct TaskFormTemplate {
+  usr: Option<users::Model>,
+  task: CreateTaskPayload,
 }
 
 #[derive(Debug)]
@@ -43,10 +46,10 @@ impl Display for PayloadConversionError {
 
 impl std::error::Error for PayloadConversionError {}
 
-impl TryFrom<Payload> for UpsertTask {
+impl TryFrom<CreateTaskPayload> for UpsertTask {
   type Error = PayloadConversionError;
 
-  fn try_from(value: Payload) -> Result<Self, Self::Error> {
+  fn try_from(value: CreateTaskPayload) -> Result<Self, Self::Error> {
     let err = PayloadConversionError {};
     if value.owner.is_none() || value.title.is_none() {
       Err(err)
@@ -66,40 +69,18 @@ impl TryFrom<Payload> for UpsertTask {
   }
 }
 
-pub fn text_field<T: Into<String>>(
-  field: &'static str,
-  value: Option<T>,
-  pattern: Option<&str>,
-  errors: Option<&Errors>,
-) -> Markup {
-  let id = "form-field-".to_string() + field;
-  let id_desc = "form-field-".to_string() + field + "-desc";
-  html! {
-      .form-group {
-          label .form-label for=(id) .text-capitalize { (field) }
-          input .form-control id=(id) type="textbox" name=(field) aria-describedby=(id_desc)
-              value=[value.map(Into::into)] pattern=[pattern];
-          @if let Some(Errors::NewType(val)) = errors {
-              @for err in val {
-                  .form-text .text-danger id=(id_desc) { (err.to_string()) }
-              }
-          }
-      }
-  }
-}
-
 pub async fn new_task(
   state: HyperTarot,
-  task_result: Option<Payload>,
+  task_result: Option<CreateTaskPayload>,
   user: Option<users::Model>,
-) -> Markup {
+) -> TaskFormTemplate {
   let form_ok = task_result.is_some();
   let mut in_task = if let Some(task) = task_result {
     log::debug!("parsed form");
     task
   } else {
     log::info!("Found no task");
-    Payload::default()
+    CreateTaskPayload::default()
   };
   let error_map = if form_ok {
     if let Err(Errors::Object(v)) = in_task.validate() {
@@ -127,7 +108,7 @@ pub async fn new_task(
   };
   let uploaded = maybe_new_task.is_some();
   let task = if uploaded {
-    Payload::default()
+    CreateTaskPayload::default()
   } else {
     if let Some(ref target) = in_task.edit_target {
       log::debug!("looking for task to edit");
@@ -142,43 +123,15 @@ pub async fn new_task(
     }
     in_task
   };
-  html! {
-      div id=(TASK_FORM_ID) .position-relative {
-          h2 .my-3 {
-              @if task.edit_target.as_ref().is_none_or(String::is_empty) {
-                  "Create task"
-              } @else {
-                  "Edit Task"
-              }
-          }
-          .spinner  style="display: none"
-              _="on htmx:beforeRequest from body set my *display to 'flex'
-                 on htmx:afterRequest from body set my *display to 'none'"  {
-              (spinner())
-          }
-          form #task-edit-form hx-post="/fragments/tasks" _="on htmx:afterRequest wait 0.1s then send click to #refresh-tasks"
-              hx-target=(TASK_FORM_ID_CSS) .my-3 {
-              // TODO: wire from request handlers userdata extension into here as parameter
-              input type="hidden" name="owner" value=[user.map(|u| u.id)];
-              input type="hidden" name="edit_target" value=[task.edit_target];
-              .mb-3 {
-                  (text_field("title", task.title, Some("\\w{,3}"), error_map.get("title")))
-              }
-              .mb-3 {
-                  (text_field("description", task.description, None, error_map.get("description")))
-              }
-              input .btn .btn-primary type="submit";
-          }
-      }
-  }
+  TaskFormTemplate { usr: user, task }
 }
 
 #[axum::debug_handler]
-pub async fn fragment_controller(
+pub(crate) async fn fragment_controller(
   State(state): State<HyperTarot>,
   maybe_usr: Result<Extension<users::Model>, ExtensionRejection>,
-  form_result: Result<Form<Payload>, FormRejection>,
-) -> Markup {
+  form_result: Result<Form<CreateTaskPayload>, FormRejection>,
+) -> TaskFormTemplate {
   new_task(
     state,
     form_result.map(|Form(x)| x).ok(),

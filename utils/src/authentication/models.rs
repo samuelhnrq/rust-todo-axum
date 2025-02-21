@@ -9,6 +9,7 @@ use crate::config::LOADED_CONFIG;
 
 pub const REDIRECT_PATH: &str = "/auth/redirect";
 pub const LOGOUT_PATH: &str = "/auth/logout";
+pub const LOGIN_PATH: &str = "/auth/login";
 
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct Claims {

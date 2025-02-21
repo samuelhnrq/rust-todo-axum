@@ -1,0 +1,17 @@
+[package]
+name = "rinja_axum"
+publish = false
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[lib]
+name = "rinja_axum"
+path = "src/lib.rs"
+
+[dependencies]
+rinja = { version = "^0.3", features = ["with-axum"] }
+axum = { workspace = true }
+
+[lints]
+workspace = true

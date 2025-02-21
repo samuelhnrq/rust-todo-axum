@@ -1,21 +1,29 @@
+use crate::filters;
+use crate::fragments::CreateTaskPayload;
 use axum::{
   extract::{rejection::ExtensionRejection, State},
   Extension,
 };
-use entity::{generated::users, tasks::list_for_user};
-use maud::{html, Markup};
-use utils::state::HyperTarot;
-
-use crate::{
-  components::scaffolding,
-  fragments::{list_tasks, new_task},
+use entity::{
+  generated::{tasks, users},
+  tasks::list_for_user,
 };
+use rinja::Template;
+use utils::state::HyperTarot; // bring trait in scope
+
+#[derive(Template, Default)] // this will generate the code...
+#[template(path = "pages/index.jinja.html")] // using the template in this path, relative
+pub(crate) struct HomeTemplate {
+  usr: Option<users::Model>, // the field name should match the variable name
+  tasks: Vec<tasks::Model>,  // the field name should match the variable name
+  task: CreateTaskPayload,
+}
 
 #[axum::debug_handler]
-pub async fn homepage(
+pub(crate) async fn homepage(
   State(state): State<HyperTarot>,
   usr: Result<Extension<users::Model>, ExtensionRejection>,
-) -> Markup {
+) -> HomeTemplate {
   let tasks_result = if let Ok(Extension(user)) = usr.as_ref() {
     list_for_user(&state.connection, user, None, None)
       .await
@@ -23,22 +31,9 @@ pub async fn homepage(
   } else {
     vec![]
   };
-  let body = html! {
-    h1.display-2 { "Welcome to Hyper-Tarot!" }
-    @if usr.is_ok() {
-      h1 { "Available tasks" }
-      (list_tasks(tasks_result))
-      (new_task(state, None, usr.map(|Extension(u)| u).ok()).await)
-    } @else {
-      h2 {
-        "Please login!"
-      }
-      a hx-boost="false" .btn .btn-primary
-          _="on mutation of anything from <nav.navbar/> set @href to #login-anchor@href
-            on load set @href to #login-anchor@href" {
-        "Login"
-      }
-    }
-  };
-  scaffolding("Hello World", &body)
+  HomeTemplate {
+    tasks: tasks_result,
+    task: CreateTaskPayload::default(),
+    usr: usr.ok().map(|Extension(u)| u),
+  }
 }

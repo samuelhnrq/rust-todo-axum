@@ -1,0 +1,35 @@
+<div id="{{ crate::TASK_FORM_ID }}" class="position-relative">
+  <h2 class="my-3">
+    {% if task is defined %}
+    {% match task.edit_target %}
+    {% when Some with (_) %} Edit task
+    {% when None %} Create task
+    {% endmatch %}
+    {% else %} Create task
+    {% endif %}
+  </h2>
+  <div class="spinner" style="display: none" hx-ext="preload" _="on htmx:beforeRequest from body set my *display to 'flex'
+         on htmx:afterRequest from body set my *display to 'none'">
+    {% include "spinner.jinja.html" %}
+  </div>
+  <form id="task-edit-form" hx-post="/fragments/tasks"
+    _="on htmx:afterRequest wait 0.1s then send click to #refresh-tasks" hx-target="#{{ crate::TASK_FORM_ID }}"
+    class="my-3">
+    {% if let Some(user) = usr %}
+    <input type="hidden" name="owner" value="{{ user.id }}" />
+    {% endif %}
+    <input type="hidden" name="edit_target" value="{{ task.edit_target.as_ref()|ok_or_default }}" />
+    <div class="mb-3">
+      <label class="form-label" for="form-field-title">Title</label>
+      <input class="form-control" id="form-field-title" type="textbox" name="title"
+        aria-describedby="form-field-title-desc" value="{{ task.title.as_ref()|ok_or_default }}" pattern="\w{,3}" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="form-field-description">Description</label>
+      <input class="form-control" id="form-field-description" type="textbox" name="description"
+        aria-describedby="form-field-description-desc" value="{{ task.description.as_ref()|ok_or_default }}"
+        pattern="\w{,3}" />
+    </div>
+    <input class="btn btn-primary" type="submit" />
+  </form>
+</div>

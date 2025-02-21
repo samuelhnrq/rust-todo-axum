@@ -1,0 +1,9 @@
+<nav class="navbar bg-body-tertiary">
+  <div class="nav-container">
+    <a class="navbar-brand" href="#">Hyper Tarot</a>
+    <div hx-get="/fragments/login" hx-trigger="load from:document">
+      {% include "spinner.jinja.html" %}
+      <a id="login-anchor" style="display: none"></a>
+    </div>
+  </div>
+</nav>

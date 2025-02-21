@@ -1,3 +1,3 @@
 mod homepage;
 
-pub use homepage::homepage;
+pub(crate) use homepage::homepage;

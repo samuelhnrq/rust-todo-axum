@@ -12,8 +12,9 @@ path = "src/lib.rs"
 [dependencies]
 entity = { path = "../entity" }
 utils = { path = "../utils" }
+rinja_axum = { path = "../rinja_axum" }
 
-maud = { version = "0.27", features = ["axum"] }
+rinja = { version = "^0.3", features = ["with-axum"] }
 serde_html_form = "0.2.5"
 serde_valid = { workspace = true }
 axum = { workspace = true }

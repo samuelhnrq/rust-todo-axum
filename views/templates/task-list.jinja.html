@@ -1,0 +1,37 @@
+<div id="{{ crate::TASK_LIST_TABLE_ID }}" class="position-relative">
+  <div class="spinner" style="display: none"
+    hx-ext="on htmx:beforeRequest from body set my *display to 'flex' on htmx:afterRequest from body set my *display to 'none'">
+    {% include "spinner.jinja.html" %}
+  </div>
+  <table class="table" id="all-tasks">
+    <thead>
+      <tr>
+        <td>Title</td>
+        <td>Description</td>
+        <td>...</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr>
+        <td>{{ task.title }}</td>
+        <td>{{ task.description }}</td>
+        <td>
+          <button hx-delete="/fragments/tasks/delete" name="task_id" value="{{ task.id }}"
+            hx-target="#{{ crate::TASK_LIST_TABLE_ID }}" class="btn btn-light btn-sm">
+            🗑️
+          </button>
+          <button hx-post="/fragments/tasks" hx-target="#{{ crate::TASK_FORM_ID }}" name="edit_target"
+            value="{{ task.id }}" class="btn btn-light btn-sm">
+            ✏️
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button class="btn btn-secondary" id="refresh-tasks" hx-get="./fragments/tasks"
+    hx-target="#{{ crate::TASK_LIST_TABLE_ID }}">
+    Refresh list
+  </button>
+</div>

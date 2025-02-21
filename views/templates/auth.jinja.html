@@ -1,0 +1,8 @@
+{% if let Some(user) = usr %}
+<div id="user-avatar">
+  <span>Welcome {{ user.name }}! </span>
+  <a href="/logout" hx-boost="false">Logout</a>
+</div>
+{% else %}
+<a href="/login" hx-boost="false" id="login-anchor">Do login</a>
+{% endif %}

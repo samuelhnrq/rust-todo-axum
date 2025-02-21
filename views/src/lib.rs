@@ -3,16 +3,18 @@ use axum::{
   Router,
 };
 use fragments::{
-  list_tasks_controller, new_tasks_controller, tasks_list::delete_task_controller,
-  user_fragment_controller,
+  delete_task_controller, list_tasks_controller, new_tasks_controller, user_fragment_controller,
 };
 use pages::homepage;
 use utils::state::HyperTarot;
 
-mod components;
 mod errors;
+mod filters;
 mod fragments;
 mod pages;
+
+pub(crate) const TASK_LIST_TABLE_ID: &str = "tasks_list_table";
+pub(crate) const TASK_FORM_ID: &str = "tasks_form";
 
 pub fn views_router() -> Router<HyperTarot> {
   let fragments_router = Router::new()

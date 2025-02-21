@@ -1,0 +1,12 @@
+{% extends "base.jinja.html" %} {% block content %}
+
+<h1 class="display-2">Welcome to Hyper-Tarot!</h1>
+{% if usr.is_some() %}
+<h1>Available tasks</h1>
+{% include "task-list.jinja.html" %} {% include "task-form.jinja.html" %} {% else %}
+<h2>Please login!</h2>
+<a hx-boost="false" class="btn btn-primary" on="mutation of anything from <nav.navbar/> set @href to #login-anchor@href
+         load set @href to #login-anchor@href">
+  Login
+</a>
+{% endif %} {% endblock %}

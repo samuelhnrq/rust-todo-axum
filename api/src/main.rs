@@ -9,6 +9,8 @@ use tokio::signal::unix::{signal, SignalKind};
 use tower_http::trace::TraceLayer;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
+use utils::authentication::login_handler;
+use utils::authentication::models::LOGIN_PATH;
 use utils::authentication::{
   handle_oauth_redirect, logout_handler,
   models::{LOGOUT_PATH, REDIRECT_PATH},
@@ -38,6 +40,7 @@ fn build_app(state: HyperTarot) -> Router {
       user_data_extension,
     ))
     .route(LOGOUT_PATH, get(logout_handler))
+    .route(LOGIN_PATH, get(login_handler))
     .nest_service("/public", build_service())
     .route("/ping", get(ping))
     .layer(TraceLayer::new_for_http())

@@ -1,7 +1,13 @@
-use maud::{html, Markup};
+use rinja::Template;
 
-pub fn build_error_fragment(message: &str) -> Markup {
-  html! {
-    p { (message) }
+#[derive(Template)]
+#[template(path = "error.jinja.html")]
+pub(crate) struct ErrorTemplate {
+  error: String,
+}
+
+impl ErrorTemplate {
+  pub(crate) fn new(error: String) -> Self {
+    Self { error }
   }
 }

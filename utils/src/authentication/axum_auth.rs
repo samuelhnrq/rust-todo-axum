@@ -14,13 +14,28 @@ use axum_extra::extract::PrivateCookieJar;
 use either::Either;
 use entity::users::find_by_sub;
 
-use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
+use crate::{
+  authentication::generate_auth_url, config::LOADED_CONFIG, get_cookie_value, safe_cookie,
+  state::HyperTarot,
+};
 
 use super::{
   exchange_token, from_redirect_to_token_payload,
   models::{AuthRedirectQuery, Claims},
   user_info_to_db, validate_cookie,
 };
+
+#[allow(clippy::unused_async)]
+#[axum::debug_handler]
+pub async fn login_handler(
+  State(state): State<HyperTarot>,
+  mut jar: PrivateCookieJar,
+) -> impl IntoResponse {
+  log::info!("starting logout");
+  let url = generate_auth_url(&mut jar, &state.oauth_config);
+  log::info!("redirecting to {}", url);
+  (jar, Redirect::to(&url))
+}
 
 #[axum::debug_handler]
 pub async fn logout_handler(
