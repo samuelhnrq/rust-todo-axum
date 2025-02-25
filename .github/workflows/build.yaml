@@ -20,13 +20,15 @@ jobs:
           cache-on-failure: true
       - name: Lint & Build
         run: |
+          cargo install cargo-audit
           cargo fmt -q --check && echo Rust-fmt successful
+          cargo audit -D warnings
           cargo clippy --release --locked -- -D warnings && echo Clippy successful
           cargo build --release --locked
       - uses: actions/upload-artifact@v4
         with:
           name: rust-binary
-          path: target/release/rust_todo_api
+          path: target/release/ht-rs-api
           if-no-files-found: error
   build-docker:
     needs: build-rust

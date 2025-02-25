@@ -15,7 +15,7 @@
   <form id="task-edit-form" hx-post="/fragments/tasks"
     _="on htmx:afterRequest wait 0.1s then send click to #refresh-tasks" hx-target="#{{ crate::TASK_FORM_ID }}"
     class="my-3">
-    {% if let Some(user) = usr %}
+    {% if let Some(user) = user %}
     <input type="hidden" name="owner" value="{{ user.id }}" />
     {% endif %}
     <input type="hidden" name="edit_target" value="{{ task.edit_target.as_ref()|ok_or_default }}" />

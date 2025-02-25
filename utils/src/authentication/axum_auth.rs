@@ -29,12 +29,12 @@ use super::{
 #[axum::debug_handler]
 pub async fn login_handler(
   State(state): State<HyperTarot>,
-  mut jar: PrivateCookieJar,
+  jar: PrivateCookieJar,
 ) -> impl IntoResponse {
-  log::info!("starting logout");
-  let url = generate_auth_url(&mut jar, &state.oauth_config);
-  log::info!("redirecting to {}", url);
-  (jar, Redirect::to(&url))
+  log::info!("starting login");
+  let (new_jar, url) = generate_auth_url(jar, &state.oauth_config);
+  log::info!("generared auth url, redirecting");
+  (new_jar, Redirect::temporary(&url))
 }
 
 #[axum::debug_handler]
@@ -84,11 +84,14 @@ pub async fn handle_oauth_redirect(
   let pkce = get_cookie_value("pkce", &cookies);
   if query.state != crsf_token {
     log::error!(
-      "CRSF attack?! state {}, stored cookie {}",
+      "CRSF attack?! state '{}', stored cookie '{}'",
       query.state,
       crsf_token
     );
-    return (cookies, Redirect::to(LOADED_CONFIG.host_name.as_str()));
+    return (
+      cookies,
+      Redirect::to(&LOADED_CONFIG.host_name).into_response(),
+    );
   }
   log::info!("cookies pass, converting to token exchage payload");
   let token_payload = from_redirect_to_token_payload(query, pkce);
@@ -96,25 +99,26 @@ pub async fn handle_oauth_redirect(
   let session_jar = match response {
     Ok(code) => {
       log::debug!("Exchanged token successfully, persisting token in cookies");
-      let jar = cookies.add(safe_cookie("token", &code.access_token));
-      user_info_to_db(code.access_token.clone(), &state)
+      let mut jar = cookies.add(safe_cookie("token", &code.access_token));
+      user_info_to_db(&code.access_token, &state)
         .await
         .inspect_err(|err| log::error!("Failed to persist JWT into DB {:?}", err))
-        .inspect(|user| log::info!("Successfully copied {} to database", user.name))
+        .inspect(|user| log::info!("Successfully copied {} to database", user.oauth_sub))
         .ok();
       if let Some(refresh_token) = &code.refresh_token {
         log::debug!("Token has refresh, persisting too");
-        jar.add(safe_cookie("refresh_token", refresh_token))
+        jar = jar.add(safe_cookie("refresh_token", refresh_token));
       } else {
-        jar
+        log::debug!("Token has no refresh, persisting what we have");
       }
+      jar
     }
     Err(err) => {
       log::error!("Failed to exchange token {:?}", err);
       cookies
     }
   };
-  (session_jar, Redirect::to(LOADED_CONFIG.host_name.as_str()))
+  (session_jar, "hello world".into_response())
 }
 
 #[derive(serde::Serialize)]

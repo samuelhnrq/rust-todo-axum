@@ -1,5 +1,5 @@
 [package]
-name = "rust_todo_api"
+name = "ht-rs-api"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

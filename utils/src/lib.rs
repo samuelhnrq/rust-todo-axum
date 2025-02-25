@@ -14,14 +14,14 @@ where
   V: Into<String>,
 {
   Cookie::build((key.into(), val.into()))
-    .http_only(true)
-    .same_site(SameSite::Strict)
-    .secure(true)
     .path("/")
+    .http_only(true)
+    .same_site(SameSite::Lax)
+    .secure(true)
     .build()
 }
 
-pub(crate) fn get_cookie_value(key: &'static str, jar: &PrivateCookieJar) -> String {
+pub(crate) fn get_cookie_value(key: &str, jar: &PrivateCookieJar) -> String {
   jar
     .get(key)
     .map(|x| x.value_trimmed().to_string())

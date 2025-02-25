@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{config::LOADED_CONFIG, get_cookie_value, safe_cookie, state::HyperTarot};
 use axum::BoxError;
 use axum_extra::extract::{
@@ -16,6 +14,7 @@ use jsonwebtoken::{
 };
 use models::{Claims, UserInfo, REDIRECT_PATH};
 use reqwest::{header::CONTENT_TYPE, Client, Url};
+use std::collections::HashMap;
 
 mod axum_auth;
 pub mod models;
@@ -82,12 +81,12 @@ async fn validate_cookie(jar: &mut PrivateCookieJar, state: &HyperTarot) -> Opti
   }
 }
 
-async fn user_info_to_db(jwt: String, state: &HyperTarot) -> Result<users::Model, BoxError> {
+async fn user_info_to_db(jwt: &String, state: &HyperTarot) -> Result<users::Model, BoxError> {
   log::info!("Fetching new JWT user data to add to database");
   let resp = state
     .requests
     .get(&state.oauth_config.userinfo_endpoint)
-    .bearer_auth(&jwt)
+    .bearer_auth(jwt)
     .send()
     .await?
     .json::<UserInfo>()
@@ -194,13 +193,16 @@ pub fn generate_logout_url(config: &OpenIdConfiguration) -> String {
   end_session_url.to_string()
 }
 
-pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguration) -> String {
+#[must_use]
+pub fn generate_auth_url(
+  jar: PrivateCookieJar,
+  config: &OpenIdConfiguration,
+) -> (PrivateCookieJar, String) {
   let params = AuthorizationParams::new();
-  *jar = jar
-    .clone()
+  let new_jar = jar
     .add(safe_redirect_cookie("pkce", &params.code_verifier))
     .add(safe_redirect_cookie("crsf", &params.state));
-  Url::parse(&config.authorization_endpoint)
+  let url = Url::parse(&config.authorization_endpoint)
     .map(|mut x| {
       x.set_query(
         serde_urlencoded::to_string(params)
@@ -210,7 +212,8 @@ pub fn generate_auth_url(jar: &mut PrivateCookieJar, config: &OpenIdConfiguratio
       );
       x.to_string()
     })
-    .unwrap_or("Failed to generate URL".to_string())
+    .unwrap_or("Failed to generate URL".to_string());
+  (new_jar, url)
 }
 
 fn is_sig_key(key: &Jwk) -> bool {

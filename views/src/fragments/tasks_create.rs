@@ -30,7 +30,7 @@ pub struct CreateTaskPayload {
 #[derive(Template)] // this will generate the code...
 #[template(path = "task-form.jinja.html")] // using the template in this path, relative
 pub(crate) struct TaskFormTemplate {
-  usr: Option<users::Model>,
+  user: Option<users::Model>,
   task: CreateTaskPayload,
 }
 
@@ -97,7 +97,7 @@ pub async fn new_task(
       let res = entity::tasks::upsert_task(new_task, &state.connection).await;
       res
         .inspect_err(|err| log::info!("Failed to insert the task: {:?}", err))
-        .inspect(|_usr| log::info!("inserted new task successfully"))
+        .inspect(|_| log::info!("inserted new task successfully"))
         .ok()
     } else {
       log::info!("did not manage to convert to task insert");
@@ -123,19 +123,19 @@ pub async fn new_task(
     }
     in_task
   };
-  TaskFormTemplate { usr: user, task }
+  TaskFormTemplate { user, task }
 }
 
 #[axum::debug_handler]
 pub(crate) async fn fragment_controller(
   State(state): State<HyperTarot>,
-  maybe_usr: Result<Extension<users::Model>, ExtensionRejection>,
+  maybe_user: Result<Extension<users::Model>, ExtensionRejection>,
   form_result: Result<Form<CreateTaskPayload>, FormRejection>,
 ) -> TaskFormTemplate {
   new_task(
     state,
     form_result.map(|Form(x)| x).ok(),
-    maybe_usr.map(|Extension(x)| x).ok(),
+    maybe_user.map(|Extension(x)| x).ok(),
   )
   .await
 }

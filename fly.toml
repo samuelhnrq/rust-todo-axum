@@ -16,7 +16,7 @@ timeout = "5s"
 path = "/ping"
 
 [env]
-RUST_LOG = "DEBUG,rust_todo_api,utils,migration,entity,views,hyper_util=info,rustls=info"
+RUST_LOG = "DEBUG,ht-rs-api,utils,migration,entity,views,hyper_util=info,rustls=info"
 
 [deploy]
 strategy = "canary"

@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=.cargo_cache \
   cargo fmt --check --all && \
   cargo clippy --release --locked && \
   cargo build --release --locked && \
-  cp target/release/rust_todo_api .
+  cp target/release/ht-rs-api .
 
 FROM debian:bookworm-slim
 
@@ -20,11 +20,11 @@ RUN mkdir /app
 WORKDIR /app
 COPY ./views/www /app/www
 COPY ./config.toml /app/config.toml
-COPY --from=build /app/rust_todo_api /app/rust_todo_api
+COPY --from=build /app/ht-rs-api /app/
 
 ENV HT_WWW_STATIC_FILES=/app/www
 
 EXPOSE 8889
 
 # Avoiding recieving PID 1
-CMD ["/app/rust_todo_api"]
+CMD ["sh", "-c", "/app/ht-rs-api"]
