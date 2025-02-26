@@ -8,7 +8,6 @@ use fragments::{
 use pages::homepage;
 use utils::state::HyperTarot;
 
-mod errors;
 mod filters;
 mod fragments;
 mod pages;

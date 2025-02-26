@@ -3,4 +3,7 @@
 .vscode/
 .env
 config.toml
-.DS_Store
+node_modules/
+**/.DS_Store
+views/www/DS_Store
+views/**/tailwind.css

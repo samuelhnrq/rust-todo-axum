@@ -88,10 +88,7 @@ pub async fn handle_oauth_redirect(
       query.state,
       crsf_token
     );
-    return (
-      cookies,
-      Redirect::to(&LOADED_CONFIG.host_name).into_response(),
-    );
+    return (cookies, Redirect::to(&LOADED_CONFIG.host_name));
   }
   log::info!("cookies pass, converting to token exchage payload");
   let token_payload = from_redirect_to_token_payload(query, pkce);
@@ -118,7 +115,7 @@ pub async fn handle_oauth_redirect(
       cookies
     }
   };
-  (session_jar, "hello world".into_response())
+  (session_jar, Redirect::temporary("/"))
 }
 
 #[derive(serde::Serialize)]
