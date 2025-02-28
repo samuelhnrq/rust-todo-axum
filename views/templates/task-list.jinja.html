@@ -1,16 +1,18 @@
-{% macro stripped(index) %}
-  {% if index % 2 == 0 %}
+{% macro stripped(index) -%}
+  {% if index % 2 == 0 -%}
     bg-slate-100
-  {% else %}
+  {%- else -%}
     bg-slate-200
-  {% endif %}
-{% endmacro %}
+  {%- endif %}
+{%- endmacro %}
 
 <div id="{{ crate::TASK_LIST_TABLE_ID }}" class="position-relative">
   <div
     class="spinner"
     style="display: none"
-    hx-ext="on htmx:beforeRequest from body set my *display to 'flex' on htmx:afterRequest from body set my *display to 'none'"
+    hx-ext="
+      on htmx:beforeRequest from body set my *display to 'flex'
+      on htmx:afterRequest from body set my *display to 'none'"
   >
     {% include "spinner.jinja.html" %}
   </div>

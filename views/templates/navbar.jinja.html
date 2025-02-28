@@ -1,5 +1,7 @@
 <nav class="bg-slate-200">
-  <div class="mx-auto p-4 container flex items-center justify-between">
+  <div
+    class="mx-auto p-4 container flex max-w-5xl items-center justify-between"
+  >
     <a class="navbar-brand" href="#">Hyper Tarot</a>
     <div hx-get="/fragments/login" hx-trigger="load from:document">
       {% include "spinner.jinja.html" %}

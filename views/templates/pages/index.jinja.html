@@ -1,20 +1,17 @@
 {% extends "base.jinja.html" %}
 {% block content %}
-  <h1 class="display-2 text-4xl">Welcome to Hyper-Tarot!</h1>
+  <h1 class="display-2 text-4xl mb-2">Welcome to Hyper-Tarot!</h1>
   <div>
-    {% if user.is_some() %}
+    {% if user.is_some() -%}
       <div>
         <h1>Available tasks</h1>
         {% include "task-list.jinja.html" %}
         {% include "task-form.jinja.html" %}
       </div>
-    {% else %}
+    {%- else -%}
       <div>
         <h2>Please login!</h2>
-        <a hx-boost="false" class="btn btn-primary" href="/auth/login">
-          Login
-        </a>
       </div>
-    {% endif %}
+    {%- endif %}
   </div>
 {% endblock %}

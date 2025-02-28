@@ -11,19 +11,21 @@
     <style>
       /*{% include "tailwind.css" %}/**/
     </style>
-    {% block head %}
-    {% endblock %}
+    {% block head %}{% endblock %}
   </head>
 
-  <body hx-boost="true" class="h-full flex flex-col">
-    <div id="loading" _="on load from document set my *display to 'none'">
+  <body hx-boost="true" class="h-screen flex flex-col">
+    <div
+      _="on load from document set my *display to 'none'"
+      class="absolute top-0 left-0 w-screen h-screen bg-gray-500/60 flex items-center justify-center"
+    >
       {% include "spinner.jinja.html" %}
     </div>
-    <banner> {% include "navbar.jinja.html" %} </banner>
-    <main>
-      <div class="container mx-auto flex flex-col p-4">
-        {% block content %}{% endblock %}
-      </div>
+    <banner>{% include "navbar.jinja.html" %}</banner>
+    <main
+      class="px-4 container max-w-5xl flex-1 flex flex-col self-center justify-center"
+    >
+      {% block content %}{% endblock %}
     </main>
     <script>
       function copyPreloads() {

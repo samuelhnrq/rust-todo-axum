@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::num::NonZero;
 use std::thread::available_parallelism;
 
 use crate::adapters::static_files::build_service;
@@ -48,10 +49,7 @@ fn build_app(state: HyperTarot) -> Router {
 }
 
 fn main() {
-  let threads = match available_parallelism() {
-    Ok(threads) => threads.get(),
-    Err(_) => 1,
-  };
+  let threads = available_parallelism().map(NonZero::get).unwrap_or(1);
 
   runtime::Builder::new_multi_thread()
     .enable_all()

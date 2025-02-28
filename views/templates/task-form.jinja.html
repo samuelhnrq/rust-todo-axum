@@ -1,6 +1,6 @@
 {% macro formControl(name, label, value, inputType, pattern) %}
   <label
-    class="mb-2 leading-none bg-slate-200 rounded-t-md border-b-2 border-gray-400 
+    class="mb-2 leading-none bg-slate-200 rounded-t-md border-b-2 border-gray-400
         focus-within:border-blue-400 block text-sm text-gray-500 pt-2 px-2 w-full"
   >
     {{ label }}
@@ -10,6 +10,7 @@
       name="{{ name }}"
       value="{{ value }}"
       pattern="{{ pattern }}"
+      required
     />
   </label>
 {% endmacro %}
@@ -49,8 +50,8 @@
       name="edit_target"
       value="{{ task.edit_target.as_ref()|ok_or_default }}"
     />
-    {% call formControl("title", "Title", task.title.as_ref()|ok_or_default, "textbox", "\\w{,3}") %}
-    {% call formControl("description", "Description", task.description.as_ref()|ok_or_default, "textarea", "\\w{,3}") %}
-    <input class="btn" type="submit" />
+    {% call formControl("title", "Title", task.title.as_ref()|ok_or_default, "text", "\\w{,3}") %}
+    {% call formControl("description", "Description", task.description.as_ref()|ok_or_default, "text", "\\w{,3}") %}
+    <input class="btn ml-auto block" type="submit" />
   </form>
 </div>
