@@ -9,7 +9,7 @@
   "scripts": {
     "tailwind:dev": "nodemon --ext css,html --exec 'bun run tailwind'",
     "tailwind": "tailwindcss -i ./views/templates/styles.css -o ./views/templates/tailwind.css",
-    "build": "tailwindcss -i ./views/templates/styles.css -o ./views/templates/tailwind.css --minify",
+    "build": "bun run tailwind -- --minify",
     "rust": "nodemon --exec 'cargo run' --delay 0.5",
     "dev": "concurrently npm:rust npm:tailwind:dev"
   },

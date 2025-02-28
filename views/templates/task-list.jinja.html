@@ -1,37 +1,64 @@
+{% macro stripped(index) %}
+  {% if index % 2 == 0 %}
+    bg-slate-100
+  {% else %}
+    bg-slate-200
+  {% endif %}
+{% endmacro %}
+
 <div id="{{ crate::TASK_LIST_TABLE_ID }}" class="position-relative">
-  <div class="spinner" style="display: none"
-    hx-ext="on htmx:beforeRequest from body set my *display to 'flex' on htmx:afterRequest from body set my *display to 'none'">
+  <div
+    class="spinner"
+    style="display: none"
+    hx-ext="on htmx:beforeRequest from body set my *display to 'flex' on htmx:afterRequest from body set my *display to 'none'"
+  >
     {% include "spinner.jinja.html" %}
   </div>
-  <table class="table" id="all-tasks">
-    <thead>
-      <tr>
-        <td>Title</td>
-        <td>Description</td>
-        <td>...</td>
-      </tr>
-    </thead>
-    <tbody>
-      {% for task in tasks %}
-      <tr>
-        <td>{{ task.title }}</td>
-        <td>{{ task.description }}</td>
-        <td>
-          <button hx-delete="/fragments/tasks/delete" name="task_id" value="{{ task.id }}"
-            hx-target="#{{ crate::TASK_LIST_TABLE_ID }}" class="btn btn-light btn-sm">
-            🗑️
-          </button>
-          <button hx-post="/fragments/tasks" hx-target="#{{ crate::TASK_FORM_ID }}" name="edit_target"
-            value="{{ task.id }}" class="btn btn-light btn-sm">
-            ✏️
-          </button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <button class="btn btn-secondary" id="refresh-tasks" hx-get="./fragments/tasks"
-    hx-target="#{{ crate::TASK_LIST_TABLE_ID }}">
+  <div class="border rounded-lg border-gray-600">
+    <table class="table-auto w-full rounded-lg overflow-hidden" id="all-tasks">
+      <thead>
+        <tr class="font-bold bg-slate-300 leading-none">
+          <td class="w-5/12 p-2 border-b border-slate-400">Title</td>
+          <td class="w-6/12 p-2 border-b border-slate-400">Description</td>
+          <td class="w-1/12 p-2 border-b border-slate-400">...</td>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+          <tr class="leading-none {% call stripped(loop.index) %}">
+            <td class="truncate px-2">{{ task.title }}</td>
+            <td class="truncate px-2">{{ task.description }}</td>
+            <td class="truncate px-2">
+              <button
+                hx-delete="/fragments/tasks/delete"
+                name="task_id"
+                value="{{ task.id }}"
+                hx-target="#{{ crate::TASK_LIST_TABLE_ID }}"
+                class="icon-btn"
+              >
+                🗑️
+              </button>
+              <button
+                hx-post="/fragments/tasks"
+                hx-target="#{{ crate::TASK_FORM_ID }}"
+                name="edit_target"
+                value="{{ task.id }}"
+                class="icon-btn"
+              >
+                ✏️
+              </button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button
+    class="btn bg-blue-400 ml-auto block my-2"
+    id="refresh-tasks"
+    hx-get="./fragments/tasks"
+    hx-target="#{{ crate::TASK_LIST_TABLE_ID }}"
+  >
     Refresh list
   </button>
 </div>

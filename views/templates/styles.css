@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
-.btn {
-  @apply rounded-md bg-purple-700 text-gray-200 font-bold py-2 px-4 cursor-pointer select-none;
+@layer base {
+  .btn {
+    @apply rounded-md bg-purple-400 text-gray-100 font-bold py-2 px-4 cursor-pointer select-none;
+  }
+
+  .icon-btn {
+    @apply rounded-full text-gray-100 p-2 cursor-pointer hover:bg-gray-300/50 leading-none;
+  }
 }
